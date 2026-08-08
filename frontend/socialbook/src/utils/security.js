@@ -9,6 +9,7 @@ export const LIMITS = {
   password: 128,
   shelfTitle: 200,
   shelfAuthor: 120,
+  bio: 160,
 };
 
 const HEX_COLOR = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -16,6 +17,7 @@ const DEFAULT_COLOR = '#7A2331';
 
 export const ALLOWED_POST_TYPES = new Set(['general', 'reading', 'sale']);
 export const ALLOWED_CONDITIONS = new Set(['yeni', 'yaxşı', 'orta']);
+export const ALLOWED_GENDERS = new Set(['female', 'male', 'other']);
 export const ALLOWED_PAGES = new Set([
   'home',
   'profile',
@@ -66,4 +68,18 @@ export function isValidHandle(handle) {
 export function isValidEmail(value) {
   const email = clampText(value, LIMITS.email);
   return email.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+export function sanitizeUsername(value) {
+  return clampText(value, LIMITS.username).replace(/^@+/, '').replace(/[^\w.]/g, '').toLowerCase();
+}
+
+export function usernameToHandle(username) {
+  const clean = sanitizeUsername(username);
+  return clean.length >= 3 ? `@${clean}` : '';
+}
+
+export function isValidUsername(value) {
+  const clean = sanitizeUsername(value);
+  return /^[a-z0-9_][a-z0-9_.]{2,29}$/.test(clean);
 }

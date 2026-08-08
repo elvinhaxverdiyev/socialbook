@@ -1,24 +1,51 @@
 import { useState } from 'react';
+import { Pencil, User } from 'lucide-react';
 import PostCard from '../components/posts/PostCard';
 import Avatar from '../components/ui/Avatar';
 import EmptyState from '../components/ui/EmptyState';
 import BookShelf from '../components/profile/BookShelf';
 import UserListModal from '../components/profile/UserListModal';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 import { useApp } from '../context/AppContext';
-import { User } from 'lucide-react';
+import { getDisplayUsername } from '../data/mockData';
 
 export default function ProfilePage() {
-  const { currentUser, profilePosts, followingUsers, followerUsers } = useApp();
+  const {
+    currentUser,
+    updateCurrentProfile,
+    profilePosts,
+    followingUsers,
+    followerUsers,
+  } = useApp();
   const [openList, setOpenList] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const username = getDisplayUsername(currentUser.handle);
 
   return (
     <>
-      <section className="profile-header">
-        <Avatar initials={currentUser.initials} size={72} className="profile-header__avatar" />
+      <section className="profile-header profile-header--own">
+        <button
+          type="button"
+          className="profile-header__edit"
+          onClick={() => setEditOpen(true)}
+          aria-label="Profili redaktə et"
+        >
+          <Pencil size={16} />
+        </button>
+
+        <Avatar
+          initials={currentUser.initials}
+          src={currentUser.avatarUrl}
+          size={72}
+          className="profile-header__avatar"
+        />
 
         <div className="profile-header__info">
-          <h1 className="profile-header__name font-display">{currentUser.name}</h1>
-          <p className="profile-header__handle">{currentUser.handle}</p>
+          <h1 className="profile-header__username font-display">{username}</h1>
+
+          {currentUser.bio && (
+            <p className="profile-header__bio">{currentUser.bio}</p>
+          )}
 
           <p className="profile-header__stats">
             <button
@@ -65,6 +92,17 @@ export default function ProfilePage() {
           title="İzləyənlər"
           users={followerUsers}
           onClose={() => setOpenList(null)}
+        />
+      )}
+
+      {editOpen && (
+        <ProfileEditModal
+          user={currentUser}
+          onSave={(updates) => {
+            updateCurrentProfile(updates);
+            setEditOpen(false);
+          }}
+          onClose={() => setEditOpen(false)}
         />
       )}
     </>

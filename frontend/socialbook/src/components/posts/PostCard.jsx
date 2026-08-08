@@ -60,7 +60,7 @@ export default function PostCard({ post }) {
               className="post-card__profile-link"
               onClick={() => openUserProfile(post.user.handle)}
             >
-              <Avatar initials={post.user.initials} />
+              <Avatar initials={post.user.initials} src={post.user.avatarUrl} />
               <div className="post-card__meta">
                 <p className="post-card__name">{post.user.name}</p>
                 <p className="post-card__sub">

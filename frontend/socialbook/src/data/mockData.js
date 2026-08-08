@@ -296,6 +296,11 @@ export const notifications = [
 
 export const formatPrice = (amount) => `${Number(amount).toFixed(2)} ₼`;
 
+export function getDisplayUsername(handle) {
+  if (typeof handle !== 'string') return '';
+  return handle.startsWith('@') ? handle.slice(1) : handle;
+}
+
 export const conditionLabels = {
   yeni: 'Yeni',
   yaxşı: 'Yaxşı vəziyyətdə',
@@ -332,8 +337,30 @@ export const termsContent = {
       text: 'İstifadəçi və mağaza elanlarında göstərilən məlumatların düzgünlüyünə görə paylaşan tərəf məsuliyyət daşıyır.',
     },
     {
-      heading: '4. Məxfilik',
-      text: 'Şəxsi məlumatlarınız yalnız xidmətin göstərilməsi məqsədilə emal olunur. Ətraflı məlumat backend inteqrasiyasından sonra yenilənəcək.',
+      heading: '4. Hesab',
+      text: 'Hesab məlumatlarınızın təhlükəsizliyinə görə siz məsuliyyət daşıyırsınız. Parolunuzu heç kimlə paylaşmayın.',
+    },
+  ],
+};
+
+export const privacyContent = {
+  title: 'Məxfilik siyasəti',
+  sections: [
+    {
+      heading: '1. Hansı məlumatlar toplanır',
+      text: 'Qeydiyyat zamanı email, istifadəçi adı və profil məlumatlarınız saxlanılır. Post, şərh və satış elanları da hesabınıza bağlanır.',
+    },
+    {
+      heading: '2. Məlumatların istifadəsi',
+      text: 'Məlumatlar yalnız xidmətin göstərilməsi, təhlükəsizlik və platformanın inkişafı məqsədilə emal olunur.',
+    },
+    {
+      heading: '3. Üçüncü tərəflərlə paylaşım',
+      text: 'Şəxsi məlumatlarınız reklam məqsədilə satılmır. Qanuni tələb olduqda və ya xidmət təminatçıları ilə məhdud şəkildə paylaşıla bilər.',
+    },
+    {
+      heading: '4. Sizin hüquqlarınız',
+      text: 'Məlumatlarınıza baxmaq, düzəltmək və silinməsini tələb etmək hüququnuz var. Sorğularınızı parametrlər bölməsindən göndərə bilərsiniz.',
     },
   ],
 };

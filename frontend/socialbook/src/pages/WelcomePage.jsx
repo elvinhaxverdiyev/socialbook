@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { BookOpen, Store, Users, MessageCircle, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import heroIllustration from '../assets/welcome-hero.svg';
-import { isValidEmail, LIMITS } from '../utils/security';
+import { isValidEmail, isValidUsername, LIMITS, sanitizeUsername } from '../utils/security';
+import LegalModal from '../components/ui/LegalModal';
+import { termsContent, privacyContent } from '../data/mockData';
+import { genderOptions } from '../data/constants';
 
 const features = [
   { icon: BookOpen, text: 'Kitab paylaş, oxuma fikirlərini yaz', color: '#7A2331' },
@@ -19,12 +22,24 @@ const floatingBooks = [
 ];
 
 export default function WelcomePage() {
-  const { setIsLoggedIn } = useApp();
+  const { setIsLoggedIn, completeRegistration } = useApp();
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [gender, setGender] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [legalModal, setLegalModal] = useState(null);
   const [error, setError] = useState('');
+
+  const switchMode = (nextMode) => {
+    setMode(nextMode);
+    setError('');
+    if (nextMode === 'login') {
+      setAcceptedTerms(false);
+      setGender('');
+    }
+  };
 
   const submit = (e) => {
     e.preventDefault();
@@ -39,8 +54,20 @@ export default function WelcomePage() {
         setError('Düzgün email daxil edin.');
         return;
       }
+      if (!isValidUsername(username)) {
+        setError('Username ən azı 3 simvol olmalıdır.');
+        return;
+      }
+      if (!gender) {
+        setError('Cinsiyyət seçin.');
+        return;
+      }
       if (password.length < 6) {
         setError('Parol ən azı 6 simvol olmalıdır.');
+        return;
+      }
+      if (!acceptedTerms) {
+        setError('Qeydiyyat üçün istifadə şərtləri və məxfilik siyasətini qəbul etməlisiniz.');
         return;
       }
     } else if (!email.trim() || !password.trim()) {
@@ -52,6 +79,11 @@ export default function WelcomePage() {
     }
 
     setPassword('');
+    if (mode === 'register') {
+      completeRegistration({ username, gender });
+      return;
+    }
+
     setIsLoggedIn(true);
   };
 
@@ -141,14 +173,14 @@ export default function WelcomePage() {
             <button
               type="button"
               className={`welcome__tab ${mode === 'login' ? 'welcome__tab--active' : ''}`}
-              onClick={() => { setMode('login'); setError(''); }}
+              onClick={() => switchMode('login')}
             >
               Daxil ol
             </button>
             <button
               type="button"
               className={`welcome__tab ${mode === 'register' ? 'welcome__tab--active' : ''}`}
-              onClick={() => { setMode('register'); setError(''); }}
+              onClick={() => switchMode('register')}
             >
               Qeydiyyat
             </button>
@@ -162,13 +194,31 @@ export default function WelcomePage() {
                   id="username"
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => setUsername(sanitizeUsername(e.target.value))}
                   placeholder="məs: aysel_reads"
                   className="input"
                   autoComplete="username"
                   maxLength={LIMITS.username}
                 />
               </div>
+            )}
+
+            {mode === 'register' && (
+              <fieldset className="welcome__field welcome__gender">
+                <legend>Cinsiyyət</legend>
+                <div className="welcome__gender-options">
+                  {genderOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`welcome__gender-btn ${gender === option.value ? 'welcome__gender-btn--active' : ''}`}
+                      onClick={() => setGender(option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
             )}
 
             <div className="welcome__field">
@@ -199,9 +249,46 @@ export default function WelcomePage() {
               />
             </div>
 
+            {mode === 'register' && (
+              <div className="welcome__consent">
+                <input
+                  id="register-consent"
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="welcome__consent-input"
+                />
+                <span className="welcome__consent-text">
+                  <button
+                    type="button"
+                    className="welcome__consent-link"
+                    onClick={() => setLegalModal('terms')}
+                  >
+                    İstifadə şərtləri
+                  </button>
+                  {' '}və{' '}
+                  <button
+                    type="button"
+                    className="welcome__consent-link"
+                    onClick={() => setLegalModal('privacy')}
+                  >
+                    Məxfilik siyasəti
+                  </button>
+                  {' '}
+                  <label htmlFor="register-consent" className="welcome__consent-label">
+                    ni oxudum, qəbul edirəm.
+                  </label>
+                </span>
+              </div>
+            )}
+
             {error && <p className="welcome__error">{error}</p>}
 
-            <button type="submit" className="btn btn--primary welcome__submit">
+            <button
+              type="submit"
+              className="btn btn--primary welcome__submit"
+              disabled={mode === 'register' && (!acceptedTerms || !gender)}
+            >
               {mode === 'login' ? 'Daxil ol' : 'Hesab yarat'}
             </button>
           </form>
@@ -211,6 +298,22 @@ export default function WelcomePage() {
           </p>
         </div>
       </div>
+
+      {legalModal === 'terms' && (
+        <LegalModal
+          title={termsContent.title}
+          sections={termsContent.sections}
+          onClose={() => setLegalModal(null)}
+        />
+      )}
+
+      {legalModal === 'privacy' && (
+        <LegalModal
+          title={privacyContent.title}
+          sections={privacyContent.sections}
+          onClose={() => setLegalModal(null)}
+        />
+      )}
     </div>
   );
 }

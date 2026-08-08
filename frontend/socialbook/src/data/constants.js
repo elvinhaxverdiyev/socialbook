@@ -21,3 +21,9 @@ export const composerTypes = [
   { value: 'reading', label: 'Oxuyuram' },
   { value: 'sale', label: 'Satıram' },
 ];
+
+export const genderOptions = [
+  { value: 'female', label: 'Qadın' },
+  { value: 'male', label: 'Kişi' },
+  { value: 'other', label: 'Digər' },
+];
