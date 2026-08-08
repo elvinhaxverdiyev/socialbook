@@ -59,7 +59,7 @@ export default function Composer({ onSubmit }) {
     <section className="composer">
       <div className="composer__inner">
         <button type="button" className="composer__photo" title="Şəkil əlavə et">
-          <Avatar initials={currentUser.initials} size={40} />
+          <Avatar initials={currentUser.initials} src={currentUser.avatarUrl} size={40} />
           <span className="composer__photo-icon">
             <ImageIcon size={12} />
           </span>

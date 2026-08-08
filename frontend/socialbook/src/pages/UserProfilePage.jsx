@@ -6,7 +6,7 @@ import EmptyState from '../components/ui/EmptyState';
 import BookShelf from '../components/profile/BookShelf';
 import UserListModal from '../components/profile/UserListModal';
 import { useApp } from '../context/AppContext';
-import { getUserProfile } from '../data/mockData';
+import { getUserProfile, getDisplayUsername } from '../data/mockData';
 
 export default function UserProfilePage() {
   const {
@@ -38,7 +38,7 @@ export default function UserProfilePage() {
   }
 
   const isFollowing = following.has(profile.handle);
-  const firstName = profile.name.split(' ')[0];
+  const username = getDisplayUsername(profile.handle);
 
   return (
     <>
@@ -51,8 +51,7 @@ export default function UserProfilePage() {
         <Avatar initials={profile.initials} size={72} className="profile-header__avatar" />
 
         <div className="profile-header__info">
-          <h1 className="profile-header__name font-display">{profile.name}</h1>
-          <p className="profile-header__handle">{profile.handle}</p>
+          <h1 className="profile-header__username font-display">{username}</h1>
 
           {profile.bio && <p className="profile-header__bio">{profile.bio}</p>}
 
@@ -86,7 +85,7 @@ export default function UserProfilePage() {
 
       <BookShelf books={profile.shelfBooks} readOnly />
 
-      <h2 className="profile-feed__title">{firstName} postları</h2>
+      <h2 className="profile-feed__title">{username} postları</h2>
 
       {userPosts.length === 0 && (
         <EmptyState text="Hələ paylaşım yoxdur." icon={User} />

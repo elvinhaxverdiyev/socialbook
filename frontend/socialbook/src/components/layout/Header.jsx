@@ -53,7 +53,7 @@ export default function Header() {
               className="header__profile"
               onClick={() => setActivePage('profile')}
             >
-              <Avatar initials={currentUser.initials} size={26} />
+              <Avatar initials={currentUser.initials} src={currentUser.avatarUrl} size={26} />
               <span>Profil</span>
             </button>
           )}

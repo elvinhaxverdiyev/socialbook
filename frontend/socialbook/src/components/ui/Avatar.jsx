@@ -1,7 +1,18 @@
 import { sanitizeInitials } from '../../utils/security';
 
-export default function Avatar({ initials, size = 40, className = '' }) {
+export default function Avatar({ initials, src, size = 40, className = '' }) {
   const safeInitials = sanitizeInitials(initials);
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        className={`avatar avatar--image ${className}`}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
 
   return (
     <div

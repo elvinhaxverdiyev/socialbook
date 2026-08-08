@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { currentUser, initialPosts, initialBlockedUsers, initialShelfBooks, followingList, followersList, suggestionPool } from '../data/mockData';
+import { currentUser as initialCurrentUser, initialPosts, initialBlockedUsers, initialShelfBooks, followingList, followersList, suggestionPool, getDisplayUsername } from '../data/mockData';
 import {
   ALLOWED_CONDITIONS,
+  ALLOWED_GENDERS,
   ALLOWED_POST_TYPES,
   clampText,
   isAllowedPage,
@@ -9,27 +10,30 @@ import {
   LIMITS,
   parsePositivePrice,
   sanitizeHexColor,
+  sanitizeInitials,
   sanitizeSearchQuery,
+  sanitizeUsername,
+  usernameToHandle,
 } from '../utils/security';
 
 const AppContext = createContext(null);
 const COLOR_MODE_KEY = 'ref-color-mode';
 const SUGGESTION_SLOTS = 3;
 
-function pickRandomSuggestion(excludedHandles, followingSet) {
-  const excluded = new Set([currentUser.handle, ...excludedHandles, ...followingSet]);
+function pickRandomSuggestion(excludedHandles, followingSet, selfHandle) {
+  const excluded = new Set([selfHandle, ...excludedHandles, ...followingSet]);
   const candidates = suggestionPool.filter((person) => !excluded.has(person.handle));
   if (candidates.length === 0) return null;
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-function buildInitialSuggestions(followingSet) {
+function buildInitialSuggestions(followingSet, selfHandle) {
   const shuffled = [...suggestionPool].sort(() => Math.random() - 0.5);
   const picked = [];
 
   for (const person of shuffled) {
     if (picked.length >= SUGGESTION_SLOTS) break;
-    if (person.handle === currentUser.handle || followingSet.has(person.handle)) continue;
+    if (person.handle === selfHandle || followingSet.has(person.handle)) continue;
     picked.push(person);
   }
 
@@ -54,8 +58,12 @@ export function AppProvider({ children }) {
     () => new Set(followingList.map((user) => user.handle)),
   );
   const [visibleSuggestions, setVisibleSuggestions] = useState(() =>
-    buildInitialSuggestions(new Set(followingList.map((user) => user.handle))),
+    buildInitialSuggestions(
+      new Set(followingList.map((user) => user.handle)),
+      initialCurrentUser.handle,
+    ),
   );
+  const [currentUser, setCurrentUser] = useState(initialCurrentUser);
   const [savedIds, setSavedIds] = useState(new Set([3]));
   const [blockedUsers, setBlockedUsers] = useState(initialBlockedUsers);
   const [shelfBooks, setShelfBooks] = useState(initialShelfBooks);
@@ -146,7 +154,7 @@ export function AppProvider({ children }) {
         const otherHandles = updated
           .filter((_, index) => index !== slotIndex)
           .map((person) => person.handle);
-        const replacement = pickRandomSuggestion([handle, ...otherHandles], next);
+        const replacement = pickRandomSuggestion([handle, ...otherHandles], next, currentUser.handle);
 
         if (replacement) {
           updated[slotIndex] = replacement;
@@ -175,7 +183,11 @@ export function AppProvider({ children }) {
         const otherHandles = base
           .filter((_, i) => i !== index)
           .map((p) => p.handle);
-        const replacement = pickRandomSuggestion([person.handle, ...otherHandles], following);
+        const replacement = pickRandomSuggestion(
+          [person.handle, ...otherHandles],
+          following,
+          currentUser.handle,
+        );
 
         if (replacement) {
           base[index] = replacement;
@@ -188,7 +200,7 @@ export function AppProvider({ children }) {
 
       return changed ? updated : suggestions;
     });
-  }, [following]);
+  }, [following, currentUser.handle]);
 
   const toggleSave = (postId) => {
     const post = posts.find((p) => p.id === postId);
@@ -230,6 +242,7 @@ export function AppProvider({ children }) {
       name: currentUser.name,
       handle: currentUser.handle,
       initials: currentUser.initials,
+      avatarUrl: currentUser.avatarUrl,
     };
 
     const base = {
@@ -330,6 +343,21 @@ export function AppProvider({ children }) {
     setIsLoggedIn(value === true);
   };
 
+  const completeRegistration = ({ username, gender }) => {
+    const cleanUsername = sanitizeUsername(username);
+    const handle = usernameToHandle(cleanUsername);
+    if (!handle || !ALLOWED_GENDERS.has(gender)) return;
+
+    setCurrentUser((prev) => ({
+      ...prev,
+      handle,
+      name: getDisplayUsername(handle),
+      gender,
+      initials: sanitizeInitials(cleanUsername.slice(0, 2).toUpperCase() || prev.initials),
+    }));
+    setIsLoggedIn(true);
+  };
+
   const homeFeed = useMemo(() => {
     if (!query.trim()) return posts;
 
@@ -348,13 +376,45 @@ export function AppProvider({ children }) {
 
   const profilePosts = useMemo(
     () => posts.filter((p) => p.user?.handle === currentUser.handle),
-    [posts],
+    [posts, currentUser.handle],
   );
 
   const savedPosts = useMemo(
     () => posts.filter((p) => savedIds.has(p.id) && p.user?.handle !== currentUser.handle),
-    [posts, savedIds],
+    [posts, savedIds, currentUser.handle],
   );
+
+  const updateCurrentProfile = (updates) => {
+    const oldHandle = currentUser.handle;
+    const displayName = getDisplayUsername(updates.handle);
+
+    setCurrentUser((prev) => ({
+      ...prev,
+      handle: updates.handle,
+      bio: updates.bio,
+      avatarUrl: updates.avatarUrl,
+      avatarPresetId: updates.avatarPresetId ?? null,
+      initials: updates.initials,
+      name: displayName,
+    }));
+
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.user?.handle === oldHandle
+          ? {
+              ...post,
+              user: {
+                ...post.user,
+                handle: updates.handle,
+                name: displayName,
+                initials: updates.initials,
+                avatarUrl: updates.avatarUrl,
+              },
+            }
+          : post,
+      ),
+    );
+  };
 
   const value = {
     posts,
@@ -379,6 +439,7 @@ export function AppProvider({ children }) {
     profilePosts,
     savedPosts,
     currentUser,
+    updateCurrentProfile,
     blockedUsers,
     unblockUser,
     shelfBooks,
@@ -389,6 +450,7 @@ export function AppProvider({ children }) {
     isLoggedIn,
     logout,
     setIsLoggedIn: setLoggedIn,
+    completeRegistration,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
