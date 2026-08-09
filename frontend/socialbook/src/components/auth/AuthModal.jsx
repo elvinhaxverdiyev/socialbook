@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { isValidEmail, isValidUsername, LIMITS, sanitizeUsername } from '../../utils/security';
 import LegalModal from '../ui/LegalModal';
 import { termsContent, privacyContent } from '../../data/mockData';
 import { genderOptions } from '../../data/constants';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
+import useEscapeKey from '../../hooks/useEscapeKey';
+import useFocusTrap from '../../hooks/useFocusTrap';
 
 export default function AuthModal() {
   const { authModal, closeAuthModal, login, register } = useApp();
@@ -17,16 +20,30 @@ export default function AuthModal() {
   const [legalModal, setLegalModal] = useState(null);
   const [error, setError] = useState('');
 
+  const isOpen = authModal.open;
+  const cardRef = useFocusTrap(isOpen && !legalModal);
+  const handleClose = useCallback(() => {
+    if (legalModal) {
+      setLegalModal(null);
+      return;
+    }
+    closeAuthModal();
+  }, [closeAuthModal, legalModal]);
+
+  useBodyScrollLock(isOpen);
+  useEscapeKey(handleClose, isOpen);
+
   useEffect(() => {
-    if (!authModal.open) return;
+    if (!isOpen) return;
     setMode(authModal.mode === 'register' ? 'register' : 'login');
     setError('');
     setPassword('');
     setAcceptedTerms(false);
     setGender('');
-  }, [authModal.open, authModal.mode]);
+    setLegalModal(null);
+  }, [isOpen, authModal.mode]);
 
-  if (!authModal.open) return null;
+  if (!isOpen) return null;
 
   const switchMode = (next) => {
     setMode(next);
@@ -87,11 +104,17 @@ export default function AuthModal() {
   };
 
   return (
-    <div className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
-      <button type="button" className="auth-modal__backdrop" onClick={closeAuthModal} aria-label="Bağla" />
+    <div className="auth-modal" role="presentation">
+      <button type="button" className="auth-modal__backdrop" onClick={handleClose} aria-label="Bağla" />
 
-      <div className="auth-modal__card">
-        <button type="button" className="auth-modal__close" onClick={closeAuthModal} aria-label="Bağla">
+      <div
+        ref={cardRef}
+        className="auth-modal__card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+      >
+        <button type="button" className="auth-modal__close" onClick={handleClose} aria-label="Bağla">
           <X size={18} />
         </button>
 
@@ -120,6 +143,7 @@ export default function AuthModal() {
                 className="input"
                 autoComplete="username"
                 maxLength={LIMITS.username}
+                data-autofocus
               />
             </div>
           )}
@@ -134,6 +158,7 @@ export default function AuthModal() {
                     type="button"
                     className={`welcome__gender-btn ${gender === option.value ? 'welcome__gender-btn--active' : ''}`}
                     onClick={() => setGender(option.value)}
+                    aria-pressed={gender === option.value}
                   >
                     {option.label}
                   </button>
@@ -153,6 +178,7 @@ export default function AuthModal() {
               className="input"
               autoComplete="email"
               maxLength={LIMITS.email}
+              data-autofocus={mode === 'login' ? true : undefined}
             />
           </div>
 
@@ -203,7 +229,11 @@ export default function AuthModal() {
             </div>
           )}
 
-          {error && <p className="welcome__error">{error}</p>}
+          {error && (
+            <p className="welcome__error" role="alert" aria-live="assertive">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"

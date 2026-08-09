@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Pencil, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import PostCard from '../components/posts/PostCard';
-import Avatar from '../components/ui/Avatar';
+import Composer from '../components/posts/Composer';
 import EmptyState from '../components/ui/EmptyState';
 import BookShelf from '../components/profile/BookShelf';
 import UserListModal from '../components/profile/UserListModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
+import ProfileHero from '../components/profile/ProfileHero';
 import { useApp } from '../context/AppContext';
 import { getDisplayUsername } from '../data/mockData';
 
@@ -16,68 +17,49 @@ export default function ProfilePage() {
     profilePosts,
     followingUsers,
     followerUsers,
+    shelfBooks,
+    addPost,
+    isLoggedIn,
   } = useApp();
   const [openList, setOpenList] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const username = getDisplayUsername(currentUser.handle);
 
   return (
-    <>
-      <section className="profile-header profile-header--own">
-        <button
-          type="button"
-          className="profile-header__edit"
-          onClick={() => setEditOpen(true)}
-          aria-label="Profili redaktə et"
-        >
-          <Pencil size={16} />
-        </button>
-
-        <Avatar
-          initials={currentUser.initials}
-          src={currentUser.avatarUrl}
-          size={72}
-          className="profile-header__avatar"
-        />
-
-        <div className="profile-header__info">
-          <h1 className="profile-header__username font-display">{username}</h1>
-
-          {currentUser.bio && (
-            <p className="profile-header__bio">{currentUser.bio}</p>
-          )}
-
-          <p className="profile-header__stats">
-            <button
-              type="button"
-              className="profile-header__stat-btn"
-              onClick={() => setOpenList('following')}
-            >
-              <strong>{followingUsers.length}</strong> izlədiyim
-            </button>
-            <span className="profile-header__dot">·</span>
-            <button
-              type="button"
-              className="profile-header__stat-btn"
-              onClick={() => setOpenList('followers')}
-            >
-              <strong>{followerUsers.length}</strong> izləyən
-            </button>
-          </p>
-        </div>
-      </section>
+    <div className="profile-page">
+      <ProfileHero
+        variant="own"
+        username={username}
+        handle={currentUser.handle}
+        bio={currentUser.bio}
+        initials={currentUser.initials}
+        avatarUrl={currentUser.avatarUrl}
+        bannerUrl={currentUser.bannerUrl}
+        followingCount={followingUsers.length}
+        followersCount={followerUsers.length}
+        postsCount={profilePosts.length}
+        shelfCount={shelfBooks.length}
+        onEdit={() => setEditOpen(true)}
+        onOpenFollowing={() => setOpenList('following')}
+        onOpenFollowers={() => setOpenList('followers')}
+      />
 
       <BookShelf />
 
-      <h2 className="profile-feed__title">Mənim postlarım</h2>
+      <section className="profile-feed">
+        <div className="profile-feed__head">
+          <h2 className="profile-feed__title">Paylaşımlar</h2>
+          <span className="profile-feed__count">{profilePosts.length}</span>
+        </div>
 
-      {profilePosts.length === 0 && (
-        <EmptyState text="Hələ paylaşımın yoxdur." icon={User} />
-      )}
+        {isLoggedIn && <Composer onSubmit={addPost} />}
 
-      {profilePosts.map((post) => (
-        <PostCard key={post.id} post={post} />
-      ))}
+        {profilePosts.length === 0 ? (
+          <EmptyState text="Hələ paylaşımın yoxdur." icon={User} />
+        ) : (
+          profilePosts.map((post) => <PostCard key={post.id} post={post} />)
+        )}
+      </section>
 
       {openList === 'following' && (
         <UserListModal
@@ -105,6 +87,6 @@ export default function ProfilePage() {
           onClose={() => setEditOpen(false)}
         />
       )}
-    </>
+    </div>
   );
 }

@@ -1,29 +1,48 @@
 import { Star } from 'lucide-react';
 
-export default function RatingStars({ rating, size = 14, interactive = false, onChange }) {
+export default function RatingStars({ rating = 0, size = 14, interactive = false, onChange, label }) {
+  const rounded = Math.round(Number(rating) || 0);
+  const groupLabel = label || `${rounded} ulduzdan 5`;
+
   return (
-    <div className="rating-stars">
+    <div
+      className="rating-stars"
+      role={interactive ? 'group' : 'img'}
+      aria-label={groupLabel}
+    >
       {Array.from({ length: 5 }).map((_, i) => {
-        const filled = i < rating;
+        const value = i + 1;
+        const filled = i < rounded;
         const star = (
           <Star
-            key={i}
             size={size}
             fill={filled ? 'var(--gold)' : 'none'}
             color="var(--gold)"
             strokeWidth={1.5}
+            aria-hidden="true"
           />
         );
 
         if (interactive) {
           return (
-            <button key={i} type="button" className="rating-stars__btn" onClick={() => onChange(i + 1)}>
+            <button
+              key={value}
+              type="button"
+              className="rating-stars__btn"
+              onClick={() => onChange?.(value)}
+              aria-label={`${value} ulduz`}
+              aria-pressed={rounded === value}
+            >
               {star}
             </button>
           );
         }
 
-        return star;
+        return (
+          <span key={value} aria-hidden="true">
+            {star}
+          </span>
+        );
       })}
     </div>
   );

@@ -10,6 +10,7 @@ export default function SavedPage() {
     <>
       <section className="page-intro">
         <h1 className="page-intro__title font-display">Saxlanılanlar</h1>
+        <p className="page-intro__text">Sonra oxumaq üçün saxladığın paylaşımlar.</p>
       </section>
 
       {savedPosts.length === 0 && (
