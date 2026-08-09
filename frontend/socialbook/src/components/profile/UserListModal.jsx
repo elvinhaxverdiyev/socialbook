@@ -1,38 +1,36 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { X } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 import { useApp } from '../../context/AppContext';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
+import useEscapeKey from '../../hooks/useEscapeKey';
+import useFocusTrap from '../../hooks/useFocusTrap';
 
 export default function UserListModal({ title, users, onClose }) {
   const { following, toggleFollow, currentUser, openUserProfile } = useApp();
-
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyOverflow = body.style.overflow;
-
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-
-    return () => {
-      html.style.overflow = prevHtmlOverflow;
-      body.style.overflow = prevBodyOverflow;
-    };
-  }, []);
+  const handleClose = useCallback(() => onClose?.(), [onClose]);
+  const cardRef = useFocusTrap(true);
+  useBodyScrollLock(true);
+  useEscapeKey(handleClose, true);
 
   return (
-    <div className="user-modal-overlay" onClick={onClose} role="presentation">
+    <div className="user-modal-overlay" role="presentation">
+      <button
+        type="button"
+        className="user-modal-overlay__backdrop"
+        onClick={handleClose}
+        aria-label="Bağla"
+      />
       <div
+        ref={cardRef}
         className="user-modal"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="user-modal-title"
       >
         <header className="user-modal__header">
           <h3 id="user-modal-title" className="user-modal__title font-display">{title}</h3>
-          <button type="button" className="user-modal__close" onClick={onClose} aria-label="Bağla">
+          <button type="button" className="user-modal__close" onClick={handleClose} aria-label="Bağla">
             <X size={18} />
           </button>
         </header>
@@ -52,11 +50,11 @@ export default function UserListModal({ title, users, onClose }) {
                   type="button"
                   className="user-modal__profile-link"
                   onClick={() => {
-                    onClose();
+                    handleClose();
                     openUserProfile(user.handle);
                   }}
                 >
-                  <Avatar initials={user.initials} size={40} />
+                  <Avatar initials={user.initials} src={user.avatarUrl} size={40} name={user.name} />
                   <div className="user-modal__info">
                     <p className="user-modal__name">{user.name}</p>
                     <p className="user-modal__handle">{user.handle}</p>
@@ -68,6 +66,7 @@ export default function UserListModal({ title, users, onClose }) {
                     type="button"
                     className={`btn btn--sm ${isFollowing ? 'btn--ghost' : 'btn--primary'}`}
                     onClick={() => toggleFollow(user.handle, user)}
+                    aria-pressed={isFollowing}
                   >
                     {isFollowing ? 'İzlənilir' : 'İzlə'}
                   </button>

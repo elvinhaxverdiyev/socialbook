@@ -94,6 +94,7 @@ export default function SettingsPage() {
     <>
       <section className="page-intro">
         <h1 className="page-intro__title font-display">Parametrlər</h1>
+        <p className="page-intro__text">Görünüş, bloklar və hesab seçimləri.</p>
       </section>
 
       <div className="settings-card">
@@ -124,23 +125,25 @@ export default function SettingsPage() {
 
           <li className="settings-list__item settings-list__item--mode">
             <div className="settings-list__mode-label">
-              {colorMode === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
-              <span className="settings-list__label">Dark / Light mode</span>
+              {colorMode === 'dark' ? <Moon size={18} aria-hidden="true" /> : <Sun size={18} aria-hidden="true" />}
+              <span className="settings-list__label">Görünüş</span>
             </div>
-            <div className="mode-toggle">
+            <div className="mode-toggle" role="group" aria-label="Rəng rejimi">
               <button
                 type="button"
                 className={`mode-toggle__btn ${colorMode === 'light' ? 'mode-toggle__btn--active' : ''}`}
                 onClick={() => setColorMode('light')}
+                aria-pressed={colorMode === 'light'}
               >
-                Light
+                İşıqlı
               </button>
               <button
                 type="button"
                 className={`mode-toggle__btn ${colorMode === 'dark' ? 'mode-toggle__btn--active' : ''}`}
                 onClick={() => setColorMode('dark')}
+                aria-pressed={colorMode === 'dark'}
               >
-                Dark
+                Qaranlıq
               </button>
             </div>
           </li>
@@ -169,9 +172,11 @@ export default function SettingsPage() {
 function SettingsPanel({ title, onBack, children }) {
   return (
     <>
-      <button type="button" className="settings-back" onClick={onBack}>
-        <ArrowLeft size={16} />
-        Geri
+      <button type="button" className="nav-back settings-back" onClick={onBack} aria-label="Parametrlərə qayıt">
+        <span className="nav-back__icon" aria-hidden="true">
+          <ArrowLeft size={18} strokeWidth={2} />
+        </span>
+        <span className="nav-back__label">Geri</span>
       </button>
 
       <section className="page-intro">

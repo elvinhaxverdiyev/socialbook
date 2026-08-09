@@ -15,14 +15,32 @@ export const LIMITS = {
 const HEX_COLOR = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const DEFAULT_COLOR = '#7A2331';
 
-export const ALLOWED_POST_TYPES = new Set(['general', 'reading', 'sale']);
+export const ALLOWED_POST_TYPES = new Set(['general', 'reading', 'finished', 'sale']);
+export const ALLOWED_SHELF_STATUSES = new Set(['reading', 'finished', 'want']);
 export const ALLOWED_CONDITIONS = new Set(['yeni', 'yaxşı', 'orta']);
 export const ALLOWED_GENDERS = new Set(['female', 'male', 'other']);
+export const ALLOWED_GENRES = new Set([
+  'klassik',
+  'fantastika',
+  'detektiv',
+  'poeziya',
+  'bioqrafiya',
+  'usaq',
+  'elmi',
+  'roman',
+  'azerbaycan',
+]);
 export const ALLOWED_PAGES = new Set([
   'home',
+  'books',
+  'book',
+  'author',
+  'genres',
   'profile',
   'user-profile',
+  'shelf',
   'stores',
+  'store',
   'notifications',
   'saved',
   'settings',

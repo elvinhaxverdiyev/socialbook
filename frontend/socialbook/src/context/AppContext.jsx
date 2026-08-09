@@ -1,9 +1,10 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   currentUser as initialCurrentUser,
   initialPosts,
   initialBlockedUsers,
   initialShelfBooks,
+  initialNotifications,
   followingList,
   followersList,
   suggestionPool,
@@ -12,7 +13,9 @@ import {
 import {
   ALLOWED_CONDITIONS,
   ALLOWED_GENDERS,
+  ALLOWED_GENRES,
   ALLOWED_POST_TYPES,
+  ALLOWED_SHELF_STATUSES,
   clampText,
   isAllowedPage,
   isValidHandle,
@@ -74,10 +77,15 @@ export function AppProvider({ children }) {
   const [posts, setPosts] = useState(initialPosts);
   const [activePage, setActivePage] = useState('home');
   const [viewedUserHandle, setViewedUserHandle] = useState(null);
-  const [returnPage, setReturnPage] = useState('home');
+  const [shelfView, setShelfView] = useState({ handle: null, filter: 'all' });
+  const [viewedBookId, setViewedBookId] = useState(null);
+  const [viewedAuthorId, setViewedAuthorId] = useState(null);
+  const [viewedStoreId, setViewedStoreId] = useState(null);
+  const [booksGenreFilter, setBooksGenreFilter] = useState(null);
+  const [viewedPostId, setViewedPostId] = useState(null);
   const [query, setQuery] = useState('');
   const [followingUsers, setFollowingUsers] = useState(followingList);
-  const [followerUsers, setFollowerUsers] = useState(followersList);
+  const [followerUsers] = useState(followersList);
   const [following, setFollowing] = useState(
     () => new Set(followingList.map((user) => user.handle)),
   );
@@ -89,17 +97,100 @@ export function AppProvider({ children }) {
   );
   const [accountUser, setAccountUser] = useState(initialCurrentUser);
   const [savedIds, setSavedIds] = useState(new Set([3]));
+  const [likedCommentKeys, setLikedCommentKeys] = useState(new Set());
   const [blockedUsers, setBlockedUsers] = useState(initialBlockedUsers);
   const [shelfBooks, setShelfBooks] = useState(initialShelfBooks);
+  const [notifications, setNotifications] = useState(initialNotifications);
   const [colorMode, setColorMode] = useState(getInitialColorMode);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authModal, setAuthModal] = useState({ open: false, mode: 'login', reason: '' });
+  const [navStack, setNavStack] = useState([]);
+  const skipNavPush = useRef(false);
+  const navSnapshotRef = useRef(null);
 
   const currentUser = isLoggedIn ? accountUser : GUEST_USER;
+
+  navSnapshotRef.current = {
+    activePage,
+    viewedUserHandle,
+    shelfView,
+    viewedBookId,
+    viewedAuthorId,
+    viewedStoreId,
+    booksGenreFilter,
+  };
+
+  const pushNav = () => {
+    if (skipNavPush.current) return;
+    const snap = navSnapshotRef.current;
+    if (!snap) return;
+    setNavStack((prev) => [
+      ...prev.slice(-39),
+      {
+        ...snap,
+        shelfView: { ...(snap.shelfView || { handle: null, filter: 'all' }) },
+      },
+    ]);
+  };
+
+  const applyNavSnapshot = (snap) => {
+    skipNavPush.current = true;
+    setActivePage(snap.activePage || 'home');
+    setViewedUserHandle(snap.viewedUserHandle ?? null);
+    setShelfView(snap.shelfView || { handle: null, filter: 'all' });
+    setViewedBookId(snap.viewedBookId ?? null);
+    setViewedAuthorId(snap.viewedAuthorId ?? null);
+    setViewedStoreId(snap.viewedStoreId ?? null);
+    setBooksGenreFilter(snap.booksGenreFilter ?? null);
+    requestAnimationFrame(() => {
+      skipNavPush.current = false;
+    });
+  };
+
+  const resetToHome = () => {
+    skipNavPush.current = true;
+    setNavStack([]);
+    setActivePage('home');
+    setViewedUserHandle(null);
+    setShelfView({ handle: null, filter: 'all' });
+    setViewedBookId(null);
+    setViewedAuthorId(null);
+    setViewedStoreId(null);
+    setBooksGenreFilter(null);
+    setViewedPostId(null);
+    requestAnimationFrame(() => {
+      skipNavPush.current = false;
+    });
+  };
+
+  const goBack = () => {
+    setNavStack((prev) => {
+      if (prev.length === 0) {
+        if (navSnapshotRef.current?.activePage !== 'home') {
+          resetToHome();
+        }
+        return prev;
+      }
+      const next = [...prev];
+      const snap = next.pop();
+      applyNavSnapshot(snap);
+      return next;
+    });
+  };
+
+  const goHome = () => {
+    resetToHome();
+  };
+
+  const canGoBack = navStack.length > 0;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', colorMode);
     localStorage.setItem(COLOR_MODE_KEY, colorMode);
+
+    const themeMeta = document.querySelectorAll('meta[name="theme-color"]');
+    const color = colorMode === 'dark' ? '#141210' : '#7a2331';
+    themeMeta.forEach((meta) => meta.setAttribute('content', color));
   }, [colorMode]);
 
   const openAuthModal = (mode = 'login', reason = '') => {
@@ -148,20 +239,42 @@ export function AppProvider({ children }) {
   };
 
   const addShelfBook = (book) => {
-    if (!requireAuth('Kitab əlavə etmək üçün daxil ol və ya qeydiyyatdan keç.')) return;
+    if (!requireAuth('Kitab əlavə etmək üçün daxil ol və ya qeydiyyatdan keç.')) return false;
 
     const title = clampText(book.title, LIMITS.shelfTitle);
-    if (!title) return;
+    if (!title) return false;
 
+    const existing = book.bookId
+      ? shelfBooks.find((b) => b.bookId === book.bookId)
+      : shelfBooks.find((b) => b.title.toLowerCase() === title.toLowerCase());
+
+    if (existing) {
+      setShelfBooks((prev) =>
+        prev.map((b) =>
+          b.id === existing.id
+            ? {
+                ...b,
+                status: ALLOWED_SHELF_STATUSES.has(book.status) ? book.status : b.status,
+              }
+            : b,
+        ),
+      );
+      return existing.id;
+    }
+
+    const id = Date.now();
     setShelfBooks((prev) => [
       ...prev,
       {
-        id: Date.now(),
+        id,
+        bookId: book.bookId || null,
         title,
-        author: clampText(book.author, LIMITS.shelfAuthor) || 'Naməlum müəllif',
+        author: clampText(book.author, LIMITS.shelfAuthor),
         cover: sanitizeHexColor(book.cover),
+        status: ALLOWED_SHELF_STATUSES.has(book.status) ? book.status : 'want',
       },
     ]);
+    return id;
   };
 
   const removeShelfBook = (id) => {
@@ -169,10 +282,17 @@ export function AppProvider({ children }) {
     setShelfBooks((prev) => prev.filter((book) => book.id !== id));
   };
 
+  const updateShelfBookStatus = (id, status) => {
+    if (!requireAuth()) return;
+    if (!ALLOWED_SHELF_STATUSES.has(status)) return;
+    setShelfBooks((prev) =>
+      prev.map((book) => (book.id === id ? { ...book, status } : book)),
+    );
+  };
+
   const logout = () => {
     setIsLoggedIn(false);
-    setActivePage('home');
-    setViewedUserHandle(null);
+    resetToHome();
   };
 
   const toggleFollow = (handle, user) => {
@@ -312,13 +432,54 @@ export function AppProvider({ children }) {
               ...post,
               comments: [
                 ...post.comments,
-                { id: post.comments.length + 1, user: accountUser.name, text: safeText },
+                {
+                  id: Date.now(),
+                  user: accountUser.name,
+                  initials: accountUser.initials,
+                  avatarUrl: accountUser.avatarUrl,
+                  text: safeText,
+                  likes: 0,
+                },
               ],
             }
           : post,
       ),
     );
   };
+
+  const toggleCommentLike = (postId, commentId) => {
+    if (!requireAuth('Şərhi bəyənmək üçün daxil ol və ya qeydiyyatdan keç.')) return;
+
+    const key = `${postId}:${commentId}`;
+
+    setLikedCommentKeys((prev) => {
+      const wasLiked = prev.has(key);
+      const next = new Set(prev);
+      if (wasLiked) next.delete(key);
+      else next.add(key);
+
+      setPosts((posts) =>
+        posts.map((post) => {
+          if (post.id !== postId) return post;
+          return {
+            ...post,
+            comments: post.comments.map((comment) => {
+              if (comment.id !== commentId) return comment;
+              const current = Number(comment.likes) || 0;
+              return {
+                ...comment,
+                likes: Math.max(0, current + (wasLiked ? -1 : 1)),
+              };
+            }),
+          };
+        }),
+      );
+
+      return next;
+    });
+  };
+
+  const isCommentLiked = (postId, commentId) => likedCommentKeys.has(`${postId}:${commentId}`);
 
   const addPost = (draft) => {
     if (!requireAuth('Post paylaşmaq üçün daxil ol və ya qeydiyyatdan keç.')) return;
@@ -357,12 +518,16 @@ export function AppProvider({ children }) {
             title: clampText(draft.book.title, LIMITS.bookTitle) || 'Kitab',
             author: clampText(draft.book.author, LIMITS.bookAuthor) || 'Naməlum müəllif',
             cover: sanitizeHexColor(draft.book.cover),
+            ...(draft.book.bookId ? { bookId: draft.book.bookId } : {}),
           }
         : {
             title: 'Kitab',
             author: 'Naməlum müəllif',
             cover: sanitizeHexColor(),
           };
+
+      const category = ALLOWED_GENRES.has(draft.category) ? draft.category : null;
+      if (!category) return;
 
       setPosts((prev) => [
         {
@@ -371,6 +536,7 @@ export function AppProvider({ children }) {
           book,
           price,
           condition: ALLOWED_CONDITIONS.has(draft.condition) ? draft.condition : 'yaxşı',
+          category,
         },
         ...prev,
       ]);
@@ -394,6 +560,9 @@ export function AppProvider({ children }) {
         ...base,
         type,
         book,
+        ...(type === 'finished' && draft.rating
+          ? { rating: Math.min(5, Math.max(1, Number(draft.rating) || 0)) }
+          : {}),
       },
       ...prev,
     ]);
@@ -405,28 +574,149 @@ export function AppProvider({ children }) {
       openAuthModal('login', 'Bu bölmə üçün daxil ol və ya qeydiyyatdan keç.');
       return;
     }
+
+    const samePage =
+      page === activePage &&
+      (page === 'user-profile' ? false : true) &&
+      page !== 'book' &&
+      page !== 'author' &&
+      page !== 'shelf';
+
+    if (!skipNavPush.current && !samePage) {
+      pushNav();
+    }
+
     if (page !== 'user-profile') setViewedUserHandle(null);
+    if (page !== 'shelf') setShelfView({ handle: null, filter: 'all' });
+    if (page !== 'book') setViewedBookId(null);
+    if (page !== 'author') setViewedAuthorId(null);
+    if (page !== 'store') setViewedStoreId(null);
+    if (page !== 'books' && page !== 'genres') setBooksGenreFilter(null);
+    setViewedPostId(null);
     setActivePage(page);
   };
 
   const openUserProfile = (handle) => {
     if (!isValidHandle(handle)) return;
 
+    setViewedPostId(null);
+
     if (isLoggedIn && handle === accountUser.handle) {
+      pushNav();
       setViewedUserHandle(null);
       setActivePage('profile');
       return;
     }
 
-    setReturnPage(activePage === 'user-profile' ? returnPage : activePage);
+    pushNav();
     setViewedUserHandle(handle);
     setActivePage('user-profile');
   };
 
   const closeUserProfile = () => {
-    setViewedUserHandle(null);
-    setActivePage(isAllowedPage(returnPage) && returnPage !== 'user-profile' ? returnPage : 'home');
+    goBack();
   };
+
+  const openShelfPage = ({ handle = null, filter = 'all' } = {}) => {
+    const nextFilter = ALLOWED_SHELF_STATUSES.has(filter) || filter === 'all' ? filter : 'all';
+    const owner = handle && isValidHandle(handle) ? handle : null;
+
+    pushNav();
+    setShelfView({ handle: owner, filter: nextFilter });
+    setActivePage('shelf');
+  };
+
+  const closeShelfPage = () => {
+    goBack();
+  };
+
+  const openBook = (bookId) => {
+    if (!bookId) return;
+    pushNav();
+    setViewedPostId(null);
+    setViewedBookId(bookId);
+    setViewedAuthorId(null);
+    setViewedStoreId(null);
+    setActivePage('book');
+  };
+
+  const closeBook = () => {
+    goBack();
+  };
+
+  const openAuthor = (authorId) => {
+    if (!authorId) return;
+    pushNav();
+    setViewedPostId(null);
+    setViewedAuthorId(authorId);
+    setViewedStoreId(null);
+    setActivePage('author');
+  };
+
+  const closeAuthor = () => {
+    goBack();
+  };
+
+  const openStore = (storeId) => {
+    if (storeId == null) return;
+    pushNav();
+    setViewedPostId(null);
+    setViewedStoreId(Number(storeId));
+    setViewedBookId(null);
+    setViewedAuthorId(null);
+    setActivePage('store');
+  };
+
+  const closeStore = () => {
+    goBack();
+  };
+
+  const openBooks = ({ genre = null } = {}) => {
+    pushNav();
+    setBooksGenreFilter(genre || null);
+    setViewedBookId(null);
+    setViewedAuthorId(null);
+    setViewedStoreId(null);
+    setActivePage('books');
+  };
+
+  const openGenres = () => {
+    pushNav();
+    setViewedBookId(null);
+    setViewedAuthorId(null);
+    setViewedStoreId(null);
+    setActivePage('genres');
+  };
+
+  const openPost = (postId) => {
+    if (postId == null) return;
+    const exists = posts.some((p) => p.id === postId);
+    if (!exists) return;
+    setViewedPostId(postId);
+  };
+
+  const closePost = () => {
+    setViewedPostId(null);
+  };
+
+  const markNotificationRead = (id) => {
+    setNotifications((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, read: true } : item)),
+    );
+  };
+
+  const markAllNotificationsRead = () => {
+    setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
+  };
+
+  const deleteNotification = (id) => {
+    setNotifications((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const unreadNotificationsCount = useMemo(
+    () => notifications.filter((item) => !item.read).length,
+    [notifications],
+  );
 
   const setSearchQuery = (value) => {
     setQuery(sanitizeSearchQuery(value));
@@ -470,6 +760,7 @@ export function AppProvider({ children }) {
       bio: updates.bio,
       avatarUrl: updates.avatarUrl,
       avatarPresetId: updates.avatarPresetId ?? null,
+      bannerUrl: updates.bannerUrl ?? prev.bannerUrl,
       initials: updates.initials,
       name: displayName,
     }));
@@ -496,9 +787,30 @@ export function AppProvider({ children }) {
     posts,
     activePage,
     setActivePage: setActivePageSafe,
+    goBack,
+    goHome,
+    canGoBack,
     viewedUserHandle,
     openUserProfile,
     closeUserProfile,
+    shelfView,
+    openShelfPage,
+    closeShelfPage,
+    viewedBookId,
+    viewedAuthorId,
+    viewedStoreId,
+    booksGenreFilter,
+    openBook,
+    closeBook,
+    openAuthor,
+    closeAuthor,
+    openStore,
+    closeStore,
+    openBooks,
+    openGenres,
+    viewedPostId,
+    openPost,
+    closePost,
     query,
     setQuery: setSearchQuery,
     following,
@@ -510,6 +822,8 @@ export function AppProvider({ children }) {
     savedIds,
     toggleSave,
     addComment,
+    toggleCommentLike,
+    isCommentLiked,
     addPost,
     homeFeed,
     profilePosts,
@@ -521,6 +835,12 @@ export function AppProvider({ children }) {
     shelfBooks,
     addShelfBook,
     removeShelfBook,
+    updateShelfBookStatus,
+    notifications,
+    unreadNotificationsCount,
+    markNotificationRead,
+    markAllNotificationsRead,
+    deleteNotification,
     colorMode,
     setColorMode,
     isLoggedIn,

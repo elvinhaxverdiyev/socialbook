@@ -1,22 +1,33 @@
-import { MapPin, Star, BadgeCheck, Clock } from 'lucide-react';
+import { MapPin, Star, BadgeCheck, Clock, Store, ChevronRight } from 'lucide-react';
 import { stores } from '../data/mockData';
+import { useApp } from '../context/AppContext';
 
 export default function StoresPage() {
+  const { openStore } = useApp();
+
   return (
     <>
       <section className="page-intro">
         <h1 className="page-intro__title font-display">Mağazalar</h1>
         <p className="page-intro__text">
-          Bakıdakı kitab mağazaları burada elan paylaşır. Gələcəkdə birbaşa sifariş və çatdırılma əlavə olunacaq.
+          Bakıdakı kitab mağazaları burada elan paylaşır. Mağazaya keçib elanları izləyə bilərsən.
         </p>
       </section>
 
       <div className="stores-grid">
         {stores.map((store) => (
-          <article key={store.id} className="store-card">
-            <div className="store-card__icon">
-              <MapPin size={20} color="var(--paper-raised)" />
-            </div>
+          <button
+            key={store.id}
+            type="button"
+            className="store-card"
+            onClick={() => openStore(store.id)}
+          >
+            <span
+              className="store-card__icon"
+              style={{ background: store.cover || 'var(--accent)' }}
+            >
+              <Store size={20} color="var(--paper-raised)" />
+            </span>
 
             <div className="store-card__body">
               <h2 className="store-card__name">
@@ -44,10 +55,8 @@ export default function StoresPage() {
               </div>
             </div>
 
-            <button type="button" className="btn btn--primary btn--sm">
-              Elanlara bax
-            </button>
-          </article>
+            <ChevronRight size={18} className="store-card__arrow" aria-hidden />
+          </button>
         ))}
       </div>
     </>
