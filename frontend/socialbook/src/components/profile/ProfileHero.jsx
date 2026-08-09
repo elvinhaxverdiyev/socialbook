@@ -1,4 +1,4 @@
-import { Pencil, UserPlus, UserCheck, BookOpen, Library } from 'lucide-react';
+import { Pencil, UserPlus, UserCheck, BookOpen, Library, MoreVertical } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 import { DEFAULT_BANNER } from '../../data/media';
 
@@ -19,6 +19,7 @@ export default function ProfileHero({
   onFollow,
   onOpenFollowing,
   onOpenFollowers,
+  onOpenActions,
 }) {
   const isOwn = variant === 'own';
   const cover = bannerUrl || DEFAULT_BANNER;
@@ -62,19 +63,29 @@ export default function ProfileHero({
                   Profili redaktə et
                 </button>
               ) : (
-                <button
-                  type="button"
-                  className={`btn profile-hero__follow ${isFollowing ? 'btn--ghost' : 'btn--primary'}`}
-                  onClick={onFollow}
-                  aria-pressed={isFollowing}
-                >
-                  {isFollowing ? (
-                    <UserCheck size={15} aria-hidden="true" />
-                  ) : (
-                    <UserPlus size={15} aria-hidden="true" />
-                  )}
-                  {isFollowing ? 'İzlənilir' : 'İzlə'}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className={`btn profile-hero__follow ${isFollowing ? 'btn--ghost' : 'btn--primary'}`}
+                    onClick={onFollow}
+                    aria-pressed={isFollowing}
+                  >
+                    {isFollowing ? (
+                      <UserCheck size={15} aria-hidden="true" />
+                    ) : (
+                      <UserPlus size={15} aria-hidden="true" />
+                    )}
+                    {isFollowing ? 'İzlənilir' : 'İzlə'}
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-hero__menu"
+                    onClick={onOpenActions}
+                    aria-label="Profil seçimləri"
+                  >
+                    <MoreVertical size={18} />
+                  </button>
+                </>
               )}
             </div>
           </div>
