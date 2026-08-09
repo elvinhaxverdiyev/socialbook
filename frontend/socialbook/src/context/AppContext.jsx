@@ -1,5 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { currentUser as initialCurrentUser, initialPosts, initialBlockedUsers, initialShelfBooks, followingList, followersList, suggestionPool, getDisplayUsername } from '../data/mockData';
+import {
+  currentUser as initialCurrentUser,
+  initialPosts,
+  initialBlockedUsers,
+  initialShelfBooks,
+  followingList,
+  followersList,
+  suggestionPool,
+  getDisplayUsername,
+} from '../data/mockData';
 import {
   ALLOWED_CONDITIONS,
   ALLOWED_GENDERS,
@@ -19,6 +28,21 @@ import {
 const AppContext = createContext(null);
 const COLOR_MODE_KEY = 'ref-color-mode';
 const SUGGESTION_SLOTS = 3;
+const AUTH_PAGES = new Set(['profile', 'notifications', 'saved']);
+
+const GUEST_USER = {
+  id: 0,
+  name: 'Qonaq',
+  handle: '@guest',
+  initials: 'Q',
+  bio: '',
+  avatarUrl: null,
+  avatarPresetId: null,
+  shelvesRead: 0,
+  following: 0,
+  followers: 0,
+  booksForSale: 0,
+};
 
 function pickRandomSuggestion(excludedHandles, followingSet, selfHandle) {
   const excluded = new Set([selfHandle, ...excludedHandles, ...followingSet]);
@@ -63,23 +87,69 @@ export function AppProvider({ children }) {
       initialCurrentUser.handle,
     ),
   );
-  const [currentUser, setCurrentUser] = useState(initialCurrentUser);
+  const [accountUser, setAccountUser] = useState(initialCurrentUser);
   const [savedIds, setSavedIds] = useState(new Set([3]));
   const [blockedUsers, setBlockedUsers] = useState(initialBlockedUsers);
   const [shelfBooks, setShelfBooks] = useState(initialShelfBooks);
   const [colorMode, setColorMode] = useState(getInitialColorMode);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authModal, setAuthModal] = useState({ open: false, mode: 'login', reason: '' });
+
+  const currentUser = isLoggedIn ? accountUser : GUEST_USER;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', colorMode);
     localStorage.setItem(COLOR_MODE_KEY, colorMode);
   }, [colorMode]);
 
+  const openAuthModal = (mode = 'login', reason = '') => {
+    setAuthModal({
+      open: true,
+      mode: mode === 'register' ? 'register' : 'login',
+      reason: typeof reason === 'string' ? reason : '',
+    });
+  };
+
+  const closeAuthModal = () => {
+    setAuthModal((prev) => ({ ...prev, open: false, reason: '' }));
+  };
+
+  const requireAuth = (reason = '') => {
+    if (isLoggedIn) return true;
+    openAuthModal('login', reason);
+    return false;
+  };
+
+  const login = () => {
+    setIsLoggedIn(true);
+    closeAuthModal();
+    return true;
+  };
+
+  const register = ({ username, gender }) => {
+    const cleanUsername = sanitizeUsername(username);
+    const handle = usernameToHandle(cleanUsername);
+    if (!handle || !ALLOWED_GENDERS.has(gender)) return false;
+
+    setAccountUser((prev) => ({
+      ...prev,
+      handle,
+      name: getDisplayUsername(handle),
+      gender,
+      initials: sanitizeInitials(cleanUsername.slice(0, 2).toUpperCase() || prev.initials),
+    }));
+    setIsLoggedIn(true);
+    closeAuthModal();
+    return true;
+  };
+
   const unblockUser = (id) => {
     setBlockedUsers((prev) => prev.filter((user) => user.id !== id));
   };
 
   const addShelfBook = (book) => {
+    if (!requireAuth('Kitab əlavə etmək üçün daxil ol və ya qeydiyyatdan keç.')) return;
+
     const title = clampText(book.title, LIMITS.shelfTitle);
     if (!title) return;
 
@@ -95,14 +165,19 @@ export function AppProvider({ children }) {
   };
 
   const removeShelfBook = (id) => {
+    if (!requireAuth()) return;
     setShelfBooks((prev) => prev.filter((book) => book.id !== id));
   };
 
   const logout = () => {
     setIsLoggedIn(false);
+    setActivePage('home');
+    setViewedUserHandle(null);
   };
 
   const toggleFollow = (handle, user) => {
+    if (!requireAuth('İzləmək üçün daxil ol və ya qeydiyyatdan keç.')) return;
+
     setFollowing((prev) => {
       const wasFollowing = prev.has(handle);
 
@@ -118,6 +193,7 @@ export function AppProvider({ children }) {
             name: user.name,
             handle: user.handle,
             initials: user.initials,
+            avatarUrl: user.avatarUrl,
           },
         ];
       });
@@ -130,6 +206,8 @@ export function AppProvider({ children }) {
   };
 
   const followSuggestion = (handle, user, slotIndex) => {
+    if (!requireAuth('İzləmək üçün daxil ol və ya qeydiyyatdan keç.')) return;
+
     setFollowing((prev) => {
       if (prev.has(handle)) return prev;
 
@@ -142,6 +220,7 @@ export function AppProvider({ children }) {
             name: user.name,
             handle: user.handle,
             initials: user.initials,
+            avatarUrl: user.avatarUrl,
           },
         ];
       });
@@ -154,7 +233,11 @@ export function AppProvider({ children }) {
         const otherHandles = updated
           .filter((_, index) => index !== slotIndex)
           .map((person) => person.handle);
-        const replacement = pickRandomSuggestion([handle, ...otherHandles], next, currentUser.handle);
+        const replacement = pickRandomSuggestion(
+          [handle, ...otherHandles],
+          next,
+          accountUser.handle,
+        );
 
         if (replacement) {
           updated[slotIndex] = replacement;
@@ -186,7 +269,7 @@ export function AppProvider({ children }) {
         const replacement = pickRandomSuggestion(
           [person.handle, ...otherHandles],
           following,
-          currentUser.handle,
+          accountUser.handle,
         );
 
         if (replacement) {
@@ -200,11 +283,13 @@ export function AppProvider({ children }) {
 
       return changed ? updated : suggestions;
     });
-  }, [following, currentUser.handle]);
+  }, [following, accountUser.handle]);
 
   const toggleSave = (postId) => {
+    if (!requireAuth('Saxlamaq üçün daxil ol və ya qeydiyyatdan keç.')) return;
+
     const post = posts.find((p) => p.id === postId);
-    if (post?.user?.handle === currentUser.handle) return;
+    if (isLoggedIn && post?.user?.handle === accountUser.handle) return;
 
     setSavedIds((prev) => {
       const next = new Set(prev);
@@ -215,6 +300,8 @@ export function AppProvider({ children }) {
   };
 
   const addComment = (postId, text) => {
+    if (!requireAuth('Şərh yazmaq üçün daxil ol və ya qeydiyyatdan keç.')) return;
+
     const safeText = clampText(text, LIMITS.commentText);
     if (!safeText) return;
 
@@ -225,7 +312,7 @@ export function AppProvider({ children }) {
               ...post,
               comments: [
                 ...post.comments,
-                { id: post.comments.length + 1, user: currentUser.name, text: safeText },
+                { id: post.comments.length + 1, user: accountUser.name, text: safeText },
               ],
             }
           : post,
@@ -234,15 +321,17 @@ export function AppProvider({ children }) {
   };
 
   const addPost = (draft) => {
+    if (!requireAuth('Post paylaşmaq üçün daxil ol və ya qeydiyyatdan keç.')) return;
+
     const type = ALLOWED_POST_TYPES.has(draft.type) ? draft.type : 'general';
     const text = clampText(draft.text, LIMITS.postText);
     if (!text) return;
 
     const user = {
-      name: currentUser.name,
-      handle: currentUser.handle,
-      initials: currentUser.initials,
-      avatarUrl: currentUser.avatarUrl,
+      name: accountUser.name,
+      handle: accountUser.handle,
+      initials: accountUser.initials,
+      avatarUrl: accountUser.avatarUrl,
     };
 
     const base = {
@@ -312,6 +401,10 @@ export function AppProvider({ children }) {
 
   const setActivePageSafe = (page) => {
     if (!isAllowedPage(page)) return;
+    if (AUTH_PAGES.has(page) && !isLoggedIn) {
+      openAuthModal('login', 'Bu bölmə üçün daxil ol və ya qeydiyyatdan keç.');
+      return;
+    }
     if (page !== 'user-profile') setViewedUserHandle(null);
     setActivePage(page);
   };
@@ -319,7 +412,7 @@ export function AppProvider({ children }) {
   const openUserProfile = (handle) => {
     if (!isValidHandle(handle)) return;
 
-    if (handle === currentUser.handle) {
+    if (isLoggedIn && handle === accountUser.handle) {
       setViewedUserHandle(null);
       setActivePage('profile');
       return;
@@ -339,25 +432,6 @@ export function AppProvider({ children }) {
     setQuery(sanitizeSearchQuery(value));
   };
 
-  const setLoggedIn = (value) => {
-    setIsLoggedIn(value === true);
-  };
-
-  const completeRegistration = ({ username, gender }) => {
-    const cleanUsername = sanitizeUsername(username);
-    const handle = usernameToHandle(cleanUsername);
-    if (!handle || !ALLOWED_GENDERS.has(gender)) return;
-
-    setCurrentUser((prev) => ({
-      ...prev,
-      handle,
-      name: getDisplayUsername(handle),
-      gender,
-      initials: sanitizeInitials(cleanUsername.slice(0, 2).toUpperCase() || prev.initials),
-    }));
-    setIsLoggedIn(true);
-  };
-
   const homeFeed = useMemo(() => {
     if (!query.trim()) return posts;
 
@@ -375,20 +449,22 @@ export function AppProvider({ children }) {
   }, [posts, query]);
 
   const profilePosts = useMemo(
-    () => posts.filter((p) => p.user?.handle === currentUser.handle),
-    [posts, currentUser.handle],
+    () => posts.filter((p) => p.user?.handle === accountUser.handle),
+    [posts, accountUser.handle],
   );
 
   const savedPosts = useMemo(
-    () => posts.filter((p) => savedIds.has(p.id) && p.user?.handle !== currentUser.handle),
-    [posts, savedIds, currentUser.handle],
+    () => posts.filter((p) => savedIds.has(p.id) && p.user?.handle !== accountUser.handle),
+    [posts, savedIds, accountUser.handle],
   );
 
   const updateCurrentProfile = (updates) => {
-    const oldHandle = currentUser.handle;
+    if (!isLoggedIn) return;
+
+    const oldHandle = accountUser.handle;
     const displayName = getDisplayUsername(updates.handle);
 
-    setCurrentUser((prev) => ({
+    setAccountUser((prev) => ({
       ...prev,
       handle: updates.handle,
       bio: updates.bio,
@@ -448,9 +524,13 @@ export function AppProvider({ children }) {
     colorMode,
     setColorMode,
     isLoggedIn,
+    login,
+    register,
     logout,
-    setIsLoggedIn: setLoggedIn,
-    completeRegistration,
+    authModal,
+    openAuthModal,
+    closeAuthModal,
+    requireAuth,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

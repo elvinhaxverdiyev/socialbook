@@ -1,10 +1,19 @@
-import { Search, Home } from 'lucide-react';
+import { Search, Home, LogIn, Menu } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 import { useApp } from '../../context/AppContext';
 import { LIMITS } from '../../utils/security';
 
-export default function Header() {
-  const { query, setQuery, activePage, setActivePage, currentUser, closeUserProfile } = useApp();
+export default function Header({ onMenuClick }) {
+  const {
+    query,
+    setQuery,
+    activePage,
+    setActivePage,
+    currentUser,
+    closeUserProfile,
+    isLoggedIn,
+    openAuthModal,
+  } = useApp();
   const onOwnProfile = activePage === 'profile';
   const onUserProfile = activePage === 'user-profile';
 
@@ -16,6 +25,15 @@ export default function Header() {
   return (
     <header className="header">
       <div className="header__inner">
+        <button
+          type="button"
+          className="header__menu"
+          onClick={onMenuClick}
+          aria-label="Menyu"
+        >
+          <Menu size={20} />
+        </button>
+
         <button
           type="button"
           className="header__logo font-display"
@@ -38,23 +56,34 @@ export default function Header() {
         </div>
 
         <div className="header__actions">
-          {onOwnProfile || onUserProfile ? (
-            <button
-              type="button"
-              className="header__profile header__profile--active"
-              onClick={goHome}
-            >
-              <Home size={16} />
-              <span>Əsas səhifə</span>
-            </button>
+          {isLoggedIn ? (
+            onOwnProfile || onUserProfile ? (
+              <button
+                type="button"
+                className="header__profile header__profile--active"
+                onClick={goHome}
+              >
+                <Home size={16} />
+                <span>Əsas səhifə</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="header__profile"
+                onClick={() => setActivePage('profile')}
+              >
+                <Avatar initials={currentUser.initials} src={currentUser.avatarUrl} size={26} />
+                <span>Profil</span>
+              </button>
+            )
           ) : (
             <button
               type="button"
-              className="header__profile"
-              onClick={() => setActivePage('profile')}
+              className="btn btn--primary header__login"
+              onClick={() => openAuthModal('login')}
             >
-              <Avatar initials={currentUser.initials} src={currentUser.avatarUrl} size={26} />
-              <span>Profil</span>
+              <LogIn size={15} />
+              <span>Daxil ol</span>
             </button>
           )}
         </div>

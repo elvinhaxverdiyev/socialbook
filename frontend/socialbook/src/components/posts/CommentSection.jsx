@@ -1,12 +1,15 @@
 import { MessageCircle, Send } from 'lucide-react';
 import { useState } from 'react';
 import { LIMITS } from '../../utils/security';
+import { useApp } from '../../context/AppContext';
 
 export default function CommentSection({ post, onAddComment }) {
+  const { isLoggedIn, requireAuth } = useApp();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
 
   const submit = () => {
+    if (!requireAuth('Şərh yazmaq üçün daxil ol və ya qeydiyyatdan keç.')) return;
     if (!draft.trim()) return;
     onAddComment(post.id, draft.trim());
     setDraft('');
@@ -36,10 +39,16 @@ export default function CommentSection({ post, onAddComment }) {
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
+              onFocus={() => {
+                if (!isLoggedIn) {
+                  requireAuth('Şərh yazmaq üçün daxil ol və ya qeydiyyatdan keç.');
+                }
+              }}
               onKeyDown={(e) => e.key === 'Enter' && submit()}
-              placeholder="Şərh yaz..."
+              placeholder={isLoggedIn ? 'Şərh yaz...' : 'Şərh üçün daxil ol...'}
               className="input"
               maxLength={LIMITS.commentText}
+              readOnly={!isLoggedIn}
             />
             <button type="button" className="btn btn--primary btn--icon" onClick={submit}>
               <Send size={14} />

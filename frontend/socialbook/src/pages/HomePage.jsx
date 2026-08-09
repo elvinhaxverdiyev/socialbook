@@ -6,11 +6,11 @@ import { useApp } from '../context/AppContext';
 import { BookOpen } from 'lucide-react';
 
 export default function HomePage() {
-  const { homeFeed, addPost } = useApp();
+  const { homeFeed, addPost, isLoggedIn } = useApp();
 
   return (
     <>
-      <Composer onSubmit={addPost} />
+      {isLoggedIn && <Composer onSubmit={addPost} />}
 
       {homeFeed.length === 0 && (
         <EmptyState text="Bu axtarışa uyğun paylaşım tapılmadı." icon={BookOpen} />

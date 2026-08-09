@@ -4,6 +4,7 @@ import {
   Info,
   FileText,
   LogOut,
+  LogIn,
   Moon,
   Sun,
   ChevronRight,
@@ -21,12 +22,14 @@ export default function SettingsPage() {
     colorMode,
     setColorMode,
     logout,
+    isLoggedIn,
+    openAuthModal,
   } = useApp();
 
   const [view, setView] = useState('main');
 
   const handleLogout = () => {
-    if (window.confirm('Hesabdan çıxmaq istədiyinizə əminsiniz?')) {
+    if (window.confirm('Hesabdan çıxmaq istədiyinizə əminsiniz? Qonaq kimi baxmağa davam edəcəksiniz.')) {
       logout();
     }
   };
@@ -143,10 +146,21 @@ export default function SettingsPage() {
           </li>
         </ul>
 
-        <button type="button" className="settings-logout" onClick={handleLogout}>
-          <LogOut size={18} />
-          Logout
-        </button>
+        {isLoggedIn ? (
+          <button type="button" className="settings-logout" onClick={handleLogout}>
+            <LogOut size={18} />
+            Çıxış
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="settings-logout"
+            onClick={() => openAuthModal('login', 'Hesabına daxil ol.')}
+          >
+            <LogIn size={18} />
+            Daxil ol
+          </button>
+        )}
       </div>
     </>
   );

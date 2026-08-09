@@ -22,15 +22,30 @@ const typeBadges = {
 };
 
 export default function PostCard({ post }) {
-  const { currentUser, following, toggleFollow, savedIds, toggleSave, addComment, openUserProfile } = useApp();
+  const {
+    currentUser,
+    following,
+    toggleFollow,
+    savedIds,
+    toggleSave,
+    addComment,
+    openUserProfile,
+    isLoggedIn,
+    requireAuth,
+  } = useApp();
   const [liked, setLiked] = useState(false);
 
   const isStore = post.type === 'store';
   const isSale = post.type === 'sale' || isStore;
-  const isOwnPost = !isStore && post.user?.handle === currentUser.handle;
+  const isOwnPost = isLoggedIn && !isStore && post.user?.handle === currentUser.handle;
   const isFollowing = !isStore && following.has(post.user?.handle);
   const isSaved = savedIds.has(post.id);
   const badge = typeBadges[post.type];
+
+  const handleLike = () => {
+    if (!requireAuth('Bəyənmək üçün daxil ol və ya qeydiyyatdan keç.')) return;
+    setLiked(!liked);
+  };
 
   return (
     <article className="post-card">
@@ -110,7 +125,7 @@ export default function PostCard({ post }) {
               {!isStore && (
                 <span className="post-card__price-sm font-display">{formatPrice(post.price)}</span>
               )}
-              <button type="button" className="btn btn--primary btn--sm">
+              <button type="button" className="btn btn--primary btn--sm" onClick={() => requireAuth('Əlaqə üçün daxil ol.')}>
                 {isStore ? 'Al' : 'Əlaqə'}
               </button>
             </div>
@@ -122,7 +137,7 @@ export default function PostCard({ post }) {
         <button
           type="button"
           className={`post-action ${liked ? 'post-action--active' : ''}`}
-          onClick={() => setLiked(!liked)}
+          onClick={handleLike}
         >
           <Heart size={17} fill={liked ? 'var(--accent)' : 'none'} strokeWidth={1.7} />
           {post.likes + (liked ? 1 : 0)}
@@ -130,7 +145,11 @@ export default function PostCard({ post }) {
 
         <CommentSection post={post} onAddComment={addComment} />
 
-        <button type="button" className={`post-action ${isOwnPost ? 'post-action--end' : ''}`}>
+        <button
+          type="button"
+          className={`post-action ${isOwnPost ? 'post-action--end' : ''}`}
+          onClick={() => requireAuth('Paylaşmaq üçün daxil ol və ya qeydiyyatdan keç.')}
+        >
           <Share2 size={16} strokeWidth={1.7} />
         </button>
 
