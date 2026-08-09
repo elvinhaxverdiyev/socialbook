@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   currentUser as initialCurrentUser,
   initialPosts,
@@ -47,24 +55,59 @@ const GUEST_USER = {
   booksForSale: 0,
 };
 
-function pickRandomSuggestion(excludedHandles, followingSet, selfHandle) {
-  const excluded = new Set([selfHandle, ...excludedHandles, ...followingSet]);
+function pickRandomSuggestion(excludedHandles, followingSet, selfHandle, blockedSet = new Set()) {
+  const excluded = new Set([
+    selfHandle,
+    ...excludedHandles,
+    ...followingSet,
+    ...blockedSet,
+  ]);
   const candidates = suggestionPool.filter((person) => !excluded.has(person.handle));
   if (candidates.length === 0) return null;
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-function buildInitialSuggestions(followingSet, selfHandle) {
+function buildInitialSuggestions(followingSet, selfHandle, blockedSet = new Set()) {
   const shuffled = [...suggestionPool].sort(() => Math.random() - 0.5);
   const picked = [];
 
   for (const person of shuffled) {
     if (picked.length >= SUGGESTION_SLOTS) break;
-    if (person.handle === selfHandle || followingSet.has(person.handle)) continue;
+    if (
+      person.handle === selfHandle ||
+      followingSet.has(person.handle) ||
+      blockedSet.has(person.handle)
+    ) {
+      continue;
+    }
     picked.push(person);
   }
 
   return picked;
+}
+
+function filterBlockedFromList(users, blockedSet) {
+  return users.filter((user) => !blockedSet.has(user.handle));
+}
+
+function filterPostsFromBlocked(posts, blockedSet, selfHandle) {
+  return posts.filter((post) => {
+    const handle = post.user?.handle;
+    if (!handle || handle === selfHandle) return true;
+    return !blockedSet.has(handle);
+  });
+}
+
+function isNotificationFromBlocked(notification, blockedUsers) {
+  return blockedUsers.some((user) => {
+    const username = getDisplayUsername(user.handle);
+    const firstName = user.name.split(/\s+/)[0];
+    return (
+      notification.text.includes(user.name) ||
+      (username && notification.text.includes(username)) ||
+      (firstName.length > 2 && notification.text.includes(firstName))
+    );
+  });
 }
 
 function getInitialColorMode() {
@@ -93,6 +136,7 @@ export function AppProvider({ children }) {
     buildInitialSuggestions(
       new Set(followingList.map((user) => user.handle)),
       initialCurrentUser.handle,
+      new Set(initialBlockedUsers.map((user) => user.handle)),
     ),
   );
   const [accountUser, setAccountUser] = useState(initialCurrentUser);
@@ -109,6 +153,16 @@ export function AppProvider({ children }) {
   const navSnapshotRef = useRef(null);
 
   const currentUser = isLoggedIn ? accountUser : GUEST_USER;
+
+  const blockedHandles = useMemo(
+    () => new Set(blockedUsers.map((user) => user.handle)),
+    [blockedUsers],
+  );
+
+  const isBlockedHandle = useCallback(
+    (handle) => blockedHandles.has(handle),
+    [blockedHandles],
+  );
 
   navSnapshotRef.current = {
     activePage,
@@ -182,7 +236,7 @@ export function AppProvider({ children }) {
     resetToHome();
   };
 
-  const canGoBack = navStack.length > 0;
+  const canGoBack = navStack.length > 0 && activePage !== 'home';
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', colorMode);
@@ -236,6 +290,40 @@ export function AppProvider({ children }) {
 
   const unblockUser = (id) => {
     setBlockedUsers((prev) => prev.filter((user) => user.id !== id));
+  };
+
+  const blockUser = (user) => {
+    if (!user?.handle) return;
+
+    setBlockedUsers((prev) => {
+      if (prev.some((entry) => entry.handle === user.handle)) return prev;
+      return [
+        ...prev,
+        {
+          id: user.id ?? Date.now(),
+          name: user.name || getDisplayUsername(user.handle),
+          handle: user.handle,
+          initials: user.initials || '?',
+        },
+      ];
+    });
+
+    setFollowing((prev) => {
+      if (!prev.has(user.handle)) return prev;
+      const next = new Set(prev);
+      next.delete(user.handle);
+      return next;
+    });
+
+    setFollowingUsers((prev) => prev.filter((entry) => entry.handle !== user.handle));
+
+    setVisibleSuggestions((prev) => prev.filter((entry) => entry.handle !== user.handle));
+
+    goHome();
+  };
+
+  const reportUser = (_user, _reason) => {
+    // Mock — backend qoşulanda API-yə göndəriləcək
   };
 
   const addShelfBook = (book) => {
@@ -297,6 +385,7 @@ export function AppProvider({ children }) {
 
   const toggleFollow = (handle, user) => {
     if (!requireAuth('İzləmək üçün daxil ol və ya qeydiyyatdan keç.')) return;
+    if (blockedHandles.has(handle)) return;
 
     setFollowing((prev) => {
       const wasFollowing = prev.has(handle);
@@ -357,6 +446,7 @@ export function AppProvider({ children }) {
           [handle, ...otherHandles],
           next,
           accountUser.handle,
+          blockedHandles,
         );
 
         if (replacement) {
@@ -390,6 +480,7 @@ export function AppProvider({ children }) {
           [person.handle, ...otherHandles],
           following,
           accountUser.handle,
+          blockedHandles,
         );
 
         if (replacement) {
@@ -403,7 +494,14 @@ export function AppProvider({ children }) {
 
       return changed ? updated : suggestions;
     });
-  }, [following, accountUser.handle]);
+  }, [following, accountUser.handle, blockedHandles]);
+
+  useEffect(() => {
+    setVisibleSuggestions((prev) => {
+      const filtered = prev.filter((person) => !blockedHandles.has(person.handle));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [blockedHandles]);
 
   const toggleSave = (postId) => {
     if (!requireAuth('Saxlamaq üçün daxil ol və ya qeydiyyatdan keç.')) return;
@@ -598,6 +696,7 @@ export function AppProvider({ children }) {
 
   const openUserProfile = (handle) => {
     if (!isValidHandle(handle)) return;
+    if (blockedHandles.has(handle)) return;
 
     setViewedPostId(null);
 
@@ -620,6 +719,7 @@ export function AppProvider({ children }) {
   const openShelfPage = ({ handle = null, filter = 'all' } = {}) => {
     const nextFilter = ALLOWED_SHELF_STATUSES.has(filter) || filter === 'all' ? filter : 'all';
     const owner = handle && isValidHandle(handle) ? handle : null;
+    if (owner && blockedHandles.has(owner)) return;
 
     pushNav();
     setShelfView({ handle: owner, filter: nextFilter });
@@ -690,8 +790,18 @@ export function AppProvider({ children }) {
 
   const openPost = (postId) => {
     if (postId == null) return;
-    const exists = posts.some((p) => p.id === postId);
-    if (!exists) return;
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+
+    const authorHandle = post.user?.handle;
+    if (
+      authorHandle &&
+      blockedHandles.has(authorHandle) &&
+      authorHandle !== accountUser.handle
+    ) {
+      return;
+    }
+
     setViewedPostId(postId);
   };
 
@@ -713,9 +823,29 @@ export function AppProvider({ children }) {
     setNotifications((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const filteredNotifications = useMemo(
+    () => notifications.filter((item) => !isNotificationFromBlocked(item, blockedUsers)),
+    [notifications, blockedUsers],
+  );
+
   const unreadNotificationsCount = useMemo(
-    () => notifications.filter((item) => !item.read).length,
-    [notifications],
+    () => filteredNotifications.filter((item) => !item.read).length,
+    [filteredNotifications],
+  );
+
+  const filteredFollowingUsers = useMemo(
+    () => filterBlockedFromList(followingUsers, blockedHandles),
+    [followingUsers, blockedHandles],
+  );
+
+  const filteredFollowerUsers = useMemo(
+    () => filterBlockedFromList(followerUsers, blockedHandles),
+    [followerUsers, blockedHandles],
+  );
+
+  const filteredVisibleSuggestions = useMemo(
+    () => filterBlockedFromList(visibleSuggestions, blockedHandles),
+    [visibleSuggestions, blockedHandles],
   );
 
   const setSearchQuery = (value) => {
@@ -723,10 +853,11 @@ export function AppProvider({ children }) {
   };
 
   const homeFeed = useMemo(() => {
-    if (!query.trim()) return posts;
+    const visiblePosts = filterPostsFromBlocked(posts, blockedHandles, accountUser.handle);
+    if (!query.trim()) return visiblePosts;
 
     const q = query.toLowerCase();
-    return posts.filter((post) => {
+    return visiblePosts.filter((post) => {
       const parts = [
         post.book?.title,
         post.book?.author,
@@ -736,17 +867,19 @@ export function AppProvider({ children }) {
       ];
       return parts.filter(Boolean).join(' ').toLowerCase().includes(q);
     });
-  }, [posts, query]);
+  }, [posts, query, blockedHandles, accountUser.handle]);
 
   const profilePosts = useMemo(
     () => posts.filter((p) => p.user?.handle === accountUser.handle),
     [posts, accountUser.handle],
   );
 
-  const savedPosts = useMemo(
-    () => posts.filter((p) => savedIds.has(p.id) && p.user?.handle !== accountUser.handle),
-    [posts, savedIds, accountUser.handle],
-  );
+  const savedPosts = useMemo(() => {
+    const visiblePosts = filterPostsFromBlocked(posts, blockedHandles, accountUser.handle);
+    return visiblePosts.filter(
+      (p) => savedIds.has(p.id) && p.user?.handle !== accountUser.handle,
+    );
+  }, [posts, savedIds, accountUser.handle, blockedHandles]);
 
   const updateCurrentProfile = (updates) => {
     if (!isLoggedIn) return;
@@ -814,9 +947,9 @@ export function AppProvider({ children }) {
     query,
     setQuery: setSearchQuery,
     following,
-    followingUsers,
-    followerUsers,
-    visibleSuggestions,
+    followingUsers: filteredFollowingUsers,
+    followerUsers: filteredFollowerUsers,
+    visibleSuggestions: filteredVisibleSuggestions,
     toggleFollow,
     followSuggestion,
     savedIds,
@@ -831,12 +964,15 @@ export function AppProvider({ children }) {
     currentUser,
     updateCurrentProfile,
     blockedUsers,
+    isBlockedHandle,
     unblockUser,
+    blockUser,
+    reportUser,
     shelfBooks,
     addShelfBook,
     removeShelfBook,
     updateShelfBookStatus,
-    notifications,
+    notifications: filteredNotifications,
     unreadNotificationsCount,
     markNotificationRead,
     markAllNotificationsRead,

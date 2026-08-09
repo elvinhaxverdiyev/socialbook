@@ -4,6 +4,7 @@ import PostCard from '../components/posts/PostCard';
 import EmptyState from '../components/ui/EmptyState';
 import BookShelf from '../components/profile/BookShelf';
 import UserListModal from '../components/profile/UserListModal';
+import UserProfileActionsModal from '../components/profile/UserProfileActionsModal';
 import ProfileHero from '../components/profile/ProfileHero';
 import { useApp } from '../context/AppContext';
 import { getUserProfile, getDisplayUsername } from '../data/mockData';
@@ -15,8 +16,13 @@ export default function UserProfilePage() {
     following,
     toggleFollow,
     goHome,
+    blockedUsers,
+    isBlockedHandle,
+    blockUser,
+    reportUser,
   } = useApp();
   const [openList, setOpenList] = useState(null);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   const profile = viewedUserHandle ? getUserProfile(viewedUserHandle) : null;
 
@@ -25,7 +31,17 @@ export default function UserProfilePage() {
     [posts, viewedUserHandle],
   );
 
-  if (!profile) {
+  const visibleFollowing = useMemo(
+    () => profile?.followingList.filter((user) => !isBlockedHandle(user.handle)) ?? [],
+    [profile, isBlockedHandle],
+  );
+
+  const visibleFollowers = useMemo(
+    () => profile?.followersList.filter((user) => !isBlockedHandle(user.handle)) ?? [],
+    [profile, isBlockedHandle],
+  );
+
+  if (!profile || isBlockedHandle(viewedUserHandle)) {
     return (
       <div className="profile-page">
         <EmptyState
@@ -42,6 +58,7 @@ export default function UserProfilePage() {
   }
 
   const isFollowing = following.has(profile.handle);
+  const isBlocked = blockedUsers.some((user) => user.handle === profile.handle);
   const username = getDisplayUsername(profile.handle);
   const shelfCount = profile.shelfBooks?.length ?? 0;
 
@@ -55,14 +72,15 @@ export default function UserProfilePage() {
         initials={profile.initials}
         avatarUrl={profile.avatarUrl}
         bannerUrl={profile.bannerUrl}
-        followingCount={profile.followingList.length}
-        followersCount={profile.followersList.length}
+        followingCount={visibleFollowing.length}
+        followersCount={visibleFollowers.length}
         postsCount={userPosts.length}
         shelfCount={shelfCount}
         isFollowing={isFollowing}
         onFollow={() => toggleFollow(profile.handle, profile)}
         onOpenFollowing={() => setOpenList('following')}
         onOpenFollowers={() => setOpenList('followers')}
+        onOpenActions={() => setActionsOpen(true)}
       />
 
       <BookShelf books={profile.shelfBooks} readOnly ownerHandle={profile.handle} />
@@ -83,7 +101,7 @@ export default function UserProfilePage() {
       {openList === 'following' && (
         <UserListModal
           title="İzlədiyi"
-          users={profile.followingList}
+          users={visibleFollowing}
           onClose={() => setOpenList(null)}
         />
       )}
@@ -91,8 +109,18 @@ export default function UserProfilePage() {
       {openList === 'followers' && (
         <UserListModal
           title="İzləyənlər"
-          users={profile.followersList}
+          users={visibleFollowers}
           onClose={() => setOpenList(null)}
+        />
+      )}
+
+      {actionsOpen && (
+        <UserProfileActionsModal
+          user={profile}
+          isBlocked={isBlocked}
+          onBlock={() => blockUser(profile)}
+          onReport={(reason) => reportUser(profile, reason)}
+          onClose={() => setActionsOpen(false)}
         />
       )}
     </div>
