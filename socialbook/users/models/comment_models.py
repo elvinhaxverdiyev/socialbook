@@ -2,7 +2,7 @@ from django.db import models
 from rest_framework_simplejwt import settings
 
 
-from .user_status import Post
+from .user_posts import Post
 
 
 class Comment(models.Model):
@@ -17,7 +17,7 @@ class Comment(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='shelf_items',
+        related_name='comments',
     )
     text = models.CharField(max_length=500)
     created_at = models.DateTimeField(auto_now_add=True)
