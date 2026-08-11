@@ -1,0 +1,1 @@
+from .shelves_models import Shelf
