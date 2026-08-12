@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { isValidEmail, isValidUsername, LIMITS, sanitizeUsername } from '../../utils/security';
+import { isValidEmail, isValidPassword, isValidUsername, LIMITS, sanitizeUsername } from '../../utils/security';
 import LegalModal from '../ui/LegalModal';
 import { termsContent, privacyContent } from '../../data/mockData';
 import { genderOptions } from '../../data/constants';
@@ -99,8 +99,15 @@ export default function AuthModal() {
       setError('Düzgün email daxil edin.');
       return;
     }
+    if (!isValidPassword(password)) {
+      setError('Parol ən azı 6 simvol olmalıdır.');
+      return;
+    }
 
-    login({ email, password });
+    const ok = login({ email, password });
+    if (!ok) {
+      setError('Daxil olmaq mümkün olmadı. Məlumatları yoxlayın.');
+    }
   };
 
   return (

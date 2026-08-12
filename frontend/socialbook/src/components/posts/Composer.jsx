@@ -6,7 +6,7 @@ import BookPicker, { CUSTOM_BOOK } from './BookPicker';
 import { composerTypes } from '../../data/constants';
 import { bookCatalog, findBookByTitle, genres } from '../../data/books';
 import { useApp } from '../../context/AppContext';
-import { LIMITS } from '../../utils/security';
+import { LIMITS, parsePositivePrice } from '../../utils/security';
 
 const coverColors = ['#7A2331', '#435A45', '#B08D3D', '#22304F'];
 const TEXTAREA_MIN = 72;
@@ -166,7 +166,9 @@ export default function Composer({ onSubmit }) {
     }
 
     if (isSale) {
-      payload.price = parseFloat(price);
+      const parsedPrice = parsePositivePrice(price);
+      if (parsedPrice === null) return;
+      payload.price = parsedPrice;
       payload.condition = condition;
       payload.category = isCustomBook || needsManualCategory ? category : resolvedCategory;
     }
@@ -352,6 +354,7 @@ export default function Composer({ onSubmit }) {
                             placeholder="0.00"
                             type="number"
                             min="0"
+                            max="1000000"
                             step="0.5"
                             className="input"
                           />

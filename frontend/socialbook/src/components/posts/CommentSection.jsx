@@ -1,7 +1,7 @@
 import { Heart, MessageCircle, Send } from 'lucide-react';
 import { useState } from 'react';
 import Avatar from '../ui/Avatar';
-import { LIMITS } from '../../utils/security';
+import { LIMITS, clampText } from '../../utils/security';
 import { useApp } from '../../context/AppContext';
 
 export default function CommentSection({ post, open, onToggle }) {
@@ -17,8 +17,9 @@ export default function CommentSection({ post, open, onToggle }) {
 
   const submit = () => {
     if (!requireAuth('Şərh yazmaq üçün daxil ol və ya qeydiyyatdan keç.')) return;
-    if (!draft.trim()) return;
-    addComment(post.id, draft.trim());
+    const safeText = clampText(draft, LIMITS.commentText);
+    if (!safeText) return;
+    addComment(post.id, safeText);
     setDraft('');
   };
 

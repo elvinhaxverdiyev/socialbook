@@ -13,7 +13,15 @@ export const LIMITS = {
 };
 
 const HEX_COLOR = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-const DEFAULT_COLOR = '#7A2331';
+const DEFAULT_COLOR = '#7A1F2B';
+
+const ALLOWED_IMAGE_MIMES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+]);
 
 export const ALLOWED_POST_TYPES = new Set(['general', 'reading', 'finished', 'sale']);
 export const ALLOWED_SHELF_STATUSES = new Set(['reading', 'finished', 'want']);
@@ -100,4 +108,40 @@ export function usernameToHandle(username) {
 export function isValidUsername(value) {
   const clean = sanitizeUsername(value);
   return /^[a-z0-9_][a-z0-9_.]{2,29}$/.test(clean);
+}
+
+export function sanitizeImageUrl(value) {
+  if (typeof value !== 'string') return null;
+  const url = value.trim();
+  if (!url) return null;
+
+  if (url.startsWith('/') && !url.startsWith('//')) {
+    return url.length <= 2048 ? url : null;
+  }
+
+  if (url.startsWith('data:image/')) {
+    const semi = url.indexOf(';');
+    if (semi === -1) return null;
+    const mime = url.slice(5, semi).toLowerCase();
+    if (!ALLOWED_IMAGE_MIMES.has(mime)) return null;
+    return url.length <= 600_000 ? url : null;
+  }
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'https:') return parsed.href;
+    if (parsed.protocol === 'http:' && parsed.hostname === 'localhost') return parsed.href;
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+export function sanitizeDocumentTitle(value, maxLength = 80) {
+  return clampText(value, maxLength);
+}
+
+export function isValidPassword(value) {
+  return typeof value === 'string' && value.length >= 6 && value.length <= LIMITS.password;
 }

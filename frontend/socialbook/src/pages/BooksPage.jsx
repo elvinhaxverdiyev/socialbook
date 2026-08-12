@@ -382,7 +382,7 @@ export default function BooksPage() {
                   </div>
                 </div>
                 <div className="books-sales__meta">
-                  <span className="books-sales__price font-display">{formatPrice(post.price)}</span>
+                  <span className="books-sales__price">{formatPrice(post.price)}</span>
                   <span className="books-sales__user">{post.user?.name}</span>
                 </div>
               </button>

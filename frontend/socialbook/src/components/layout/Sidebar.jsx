@@ -3,7 +3,7 @@ import { Search, X, BookOpen, UserRound } from 'lucide-react';
 import { navItems } from '../../data/constants';
 import { searchBooks, searchAuthors } from '../../data/books';
 import { useApp } from '../../context/AppContext';
-import { LIMITS } from '../../utils/security';
+import { LIMITS, sanitizeHexColor } from '../../utils/security';
 import BookSpine from '../ui/BookSpine';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 import useEscapeKey from '../../hooks/useEscapeKey';
@@ -229,7 +229,7 @@ export default function Sidebar({ open = false, onClose }) {
                         className="search-overlay__result"
                         onClick={() => handleAuthorResult(author.id)}
                       >
-                        <span className="search-overlay__author-dot" style={{ background: author.cover }}>
+                        <span className="search-overlay__author-dot" style={{ background: sanitizeHexColor(author.cover) }}>
                           {author.name.charAt(0)}
                         </span>
                         <span>

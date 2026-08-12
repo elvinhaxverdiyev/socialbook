@@ -1,8 +1,10 @@
 import BookSpine from '../ui/BookSpine';
 import { getGenreById } from '../../data/books';
+import { sanitizeHexColor } from '../../utils/security';
 
 export default function BookCard({ book, onClick, index = 0 }) {
   const primaryGenre = book.genres?.[0] ? getGenreById(book.genres[0]) : null;
+  const bookTint = sanitizeHexColor(book.cover);
 
   return (
     <button
@@ -12,7 +14,7 @@ export default function BookCard({ book, onClick, index = 0 }) {
       style={{ animationDelay: `${Math.min(index, 11) * 35}ms` }}
       aria-label={`${book.title}, ${book.author}${book.avgRating ? `, reyting ${book.avgRating.toFixed(1)}` : ''}`}
     >
-      <div className="book-card__cover" style={{ '--book-tint': book.cover }}>
+      <div className="book-card__cover" style={{ '--book-tint': bookTint }}>
         <BookSpine color={book.cover} width={64} height={96} />
       </div>
       <div className="book-card__body">

@@ -13,6 +13,7 @@ import {
   getSalePostsForBook,
 } from '../data/books';
 import { bookTypes } from '../data/constants';
+import { sanitizeHexColor } from '../utils/security';
 import { formatPrice, conditionLabels } from '../data/mockData';
 
 const shelfActions = [
@@ -77,7 +78,7 @@ export default function BookDetailPage() {
       <article>
         <div
           className="book-detail__hero"
-          style={{ '--book-tint': book.cover }}
+          style={{ '--book-tint': sanitizeHexColor(book.cover) }}
         >
           <div className="book-detail__cover">
             <BookSpine color={book.cover} width={128} height={192} />
@@ -189,7 +190,7 @@ export default function BookDetailPage() {
             <div className="book-detail__sales">
               {salePosts.map((post) => (
                 <div key={post.id} className="book-detail__sale">
-                  <span className="book-detail__sale-price font-display">
+                  <span className="book-detail__sale-price">
                     {formatPrice(post.price)}
                   </span>
                   <span className="book-detail__sale-seller">
