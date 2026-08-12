@@ -1,6 +1,5 @@
 from django.urls import path
 from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
     TokenRefreshView,
     TokenVerifyView,
 )
@@ -29,12 +28,7 @@ urlpatterns = [
         name='login'
     ),
 
-    # JWT autentifikasiya
-    path(
-        'token/',
-        TokenObtainPairView.as_view(),
-        name='token_obtain_pair'
-    ),
+    # JWT autentifikasiya (giriş yalnız /login/ — email ilə)
     path(
         'token/refresh/',
         TokenRefreshView.as_view(),

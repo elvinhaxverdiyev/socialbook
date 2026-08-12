@@ -1,7 +1,8 @@
 import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.conf import settings
+from django.utils import timezone
 
 
 
@@ -31,9 +32,11 @@ class User(AbstractUser):
         blank=True,
         null=True,
     )
+    email = models.EmailField(unique=True)
     bio = models.TextField(max_length=500, blank=True)
     age = models.PositiveIntegerField(blank=True, null=True)
     is_email_verified = models.BooleanField(default=False)
+    password_changed_at = models.DateTimeField(null=True, blank=True)
     current_status = models.CharField(
         max_length=20,
         choices=CURRENT_STATUS_CHOICES,
@@ -70,5 +73,9 @@ class User(AbstractUser):
  
     def shelf_count_by_status(self, status):
         return self.shelf_items.filter(status=status).count()
+
+    def set_password(self, raw_password):
+        super().set_password(raw_password)
+        self.password_changed_at = timezone.now()
 
 
