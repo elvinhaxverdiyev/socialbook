@@ -18,6 +18,7 @@ import {
   suggestionPool,
   getDisplayUsername,
 } from '../data/mockData';
+import { DEFAULT_BANNER } from '../data/media';
 import {
   ALLOWED_CONDITIONS,
   ALLOWED_GENDERS,
@@ -26,10 +27,13 @@ import {
   ALLOWED_SHELF_STATUSES,
   clampText,
   isAllowedPage,
+  isValidEmail,
   isValidHandle,
+  isValidPassword,
   LIMITS,
   parsePositivePrice,
   sanitizeHexColor,
+  sanitizeImageUrl,
   sanitizeInitials,
   sanitizeSearchQuery,
   sanitizeUsername,
@@ -37,7 +41,8 @@ import {
 } from '../utils/security';
 
 const AppContext = createContext(null);
-const COLOR_MODE_KEY = 'ref-color-mode';
+const COLOR_MODE_KEY = 'kitabci-color-mode';
+const LEGACY_COLOR_MODE_KEY = 'ref-color-mode';
 const SUGGESTION_SLOTS = 3;
 const AUTH_PAGES = new Set(['profile', 'notifications', 'saved']);
 
@@ -111,8 +116,15 @@ function isNotificationFromBlocked(notification, blockedUsers) {
 }
 
 function getInitialColorMode() {
-  const saved = localStorage.getItem(COLOR_MODE_KEY);
-  if (saved === 'dark' || saved === 'light') return saved;
+  const saved =
+    localStorage.getItem(COLOR_MODE_KEY) ?? localStorage.getItem(LEGACY_COLOR_MODE_KEY);
+  if (saved === 'dark' || saved === 'light') {
+    if (!localStorage.getItem(COLOR_MODE_KEY) && localStorage.getItem(LEGACY_COLOR_MODE_KEY)) {
+      localStorage.setItem(COLOR_MODE_KEY, saved);
+      localStorage.removeItem(LEGACY_COLOR_MODE_KEY);
+    }
+    return saved;
+  }
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -188,9 +200,29 @@ export function AppProvider({ children }) {
   };
 
   const applyNavSnapshot = (snap) => {
+    if (!snap) return;
+
+    let page = isAllowedPage(snap.activePage) ? snap.activePage : 'home';
+    let viewedHandle = snap.viewedUserHandle ?? null;
+
+    if (AUTH_PAGES.has(page) && !isLoggedIn) {
+      page = 'home';
+      viewedHandle = null;
+      setAuthModal({
+        open: true,
+        mode: 'login',
+        reason: 'Bu bölmə üçün daxil ol və ya qeydiyyatdan keç.',
+      });
+    }
+
+    if (page === 'user-profile' && viewedHandle && blockedHandles.has(viewedHandle)) {
+      page = 'home';
+      viewedHandle = null;
+    }
+
     skipNavPush.current = true;
-    setActivePage(snap.activePage || 'home');
-    setViewedUserHandle(snap.viewedUserHandle ?? null);
+    setActivePage(page);
+    setViewedUserHandle(viewedHandle);
     setShelfView(snap.shelfView || { handle: null, filter: 'all' });
     setViewedBookId(snap.viewedBookId ?? null);
     setViewedAuthorId(snap.viewedAuthorId ?? null);
@@ -243,7 +275,7 @@ export function AppProvider({ children }) {
     localStorage.setItem(COLOR_MODE_KEY, colorMode);
 
     const themeMeta = document.querySelectorAll('meta[name="theme-color"]');
-    const color = colorMode === 'dark' ? '#141210' : '#7a2331';
+    const color = colorMode === 'dark' ? '#1a1817' : '#7A1F2B';
     themeMeta.forEach((meta) => meta.setAttribute('content', color));
   }, [colorMode]);
 
@@ -265,16 +297,19 @@ export function AppProvider({ children }) {
     return false;
   };
 
-  const login = () => {
+  const login = ({ email, password } = {}) => {
+    if (!isValidEmail(email) || !isValidPassword(password)) return false;
     setIsLoggedIn(true);
     closeAuthModal();
     return true;
   };
 
-  const register = ({ username, gender }) => {
+  const register = ({ username, gender, email, password }) => {
     const cleanUsername = sanitizeUsername(username);
     const handle = usernameToHandle(cleanUsername);
     if (!handle || !ALLOWED_GENDERS.has(gender)) return false;
+    if (email && !isValidEmail(email)) return false;
+    if (!isValidPassword(password)) return false;
 
     setAccountUser((prev) => ({
       ...prev,
@@ -289,6 +324,8 @@ export function AppProvider({ children }) {
   };
 
   const unblockUser = (id) => {
+    if (!requireAuth()) return;
+    if (id == null) return;
     setBlockedUsers((prev) => prev.filter((user) => user.id !== id));
   };
 
@@ -882,19 +919,30 @@ export function AppProvider({ children }) {
   }, [posts, savedIds, accountUser.handle, blockedHandles]);
 
   const updateCurrentProfile = (updates) => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !updates) return;
 
     const oldHandle = accountUser.handle;
-    const displayName = getDisplayUsername(updates.handle);
+    const handle = isValidHandle(updates.handle) ? updates.handle : oldHandle;
+    const displayName = getDisplayUsername(handle);
+    const bio = clampText(updates.bio ?? accountUser.bio, LIMITS.bio);
+    const avatarUrl =
+      updates.avatarUrl != null
+        ? sanitizeImageUrl(updates.avatarUrl)
+        : accountUser.avatarUrl;
+    const bannerUrl =
+      updates.bannerUrl != null
+        ? sanitizeImageUrl(updates.bannerUrl) ?? DEFAULT_BANNER
+        : accountUser.bannerUrl;
+    const initials = sanitizeInitials(updates.initials ?? accountUser.initials);
 
     setAccountUser((prev) => ({
       ...prev,
-      handle: updates.handle,
-      bio: updates.bio,
-      avatarUrl: updates.avatarUrl,
+      handle,
+      bio,
+      avatarUrl,
       avatarPresetId: updates.avatarPresetId ?? null,
-      bannerUrl: updates.bannerUrl ?? prev.bannerUrl,
-      initials: updates.initials,
+      bannerUrl,
+      initials,
       name: displayName,
     }));
 
@@ -905,10 +953,10 @@ export function AppProvider({ children }) {
               ...post,
               user: {
                 ...post.user,
-                handle: updates.handle,
+                handle,
                 name: displayName,
-                initials: updates.initials,
-                avatarUrl: updates.avatarUrl,
+                initials,
+                avatarUrl,
               },
             }
           : post,

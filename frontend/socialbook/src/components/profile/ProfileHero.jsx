@@ -1,6 +1,7 @@
 import { Pencil, UserPlus, UserCheck, BookOpen, Library, MoreVertical } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 import { DEFAULT_BANNER } from '../../data/media';
+import { sanitizeImageUrl } from '../../utils/security';
 
 export default function ProfileHero({
   variant = 'own',
@@ -22,7 +23,7 @@ export default function ProfileHero({
   onOpenActions,
 }) {
   const isOwn = variant === 'own';
-  const cover = bannerUrl || DEFAULT_BANNER;
+  const cover = sanitizeImageUrl(bannerUrl) ?? DEFAULT_BANNER;
 
   return (
     <section className={`profile-hero ${isOwn ? 'profile-hero--own' : 'profile-hero--other'}`}>

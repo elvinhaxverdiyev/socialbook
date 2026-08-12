@@ -84,7 +84,7 @@ export default function PostCard({ post }) {
                 </p>
               </div>
             </button>
-            <span className="post-card__price font-display">{formatPrice(post.price)}</span>
+            <span className="post-card__price">{formatPrice(post.price)}</span>
           </>
         ) : (
           <>
@@ -147,7 +147,7 @@ export default function PostCard({ post }) {
           {isSale && (
             <div className="post-card__buy">
               {!isStore && (
-                <span className="post-card__price-sm font-display">{formatPrice(post.price)}</span>
+                <span className="post-card__price-sm">{formatPrice(post.price)}</span>
               )}
               <button
                 type="button"

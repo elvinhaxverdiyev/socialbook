@@ -9,6 +9,7 @@ import {
   isValidUsername,
   LIMITS,
   sanitizeInitials,
+  sanitizeImageUrl,
   sanitizeUsername,
   usernameToHandle,
 } from '../../utils/security';
@@ -135,9 +136,9 @@ export default function ProfileEditModal({ user, onSave, onClose }) {
     onSave({
       handle: nextHandle,
       bio: clampText(bio, LIMITS.bio),
-      avatarUrl: avatarUrl || null,
+      avatarUrl: sanitizeImageUrl(avatarUrl),
       avatarPresetId: selectedPresetId,
-      bannerUrl: bannerUrl || DEFAULT_BANNER,
+      bannerUrl: sanitizeImageUrl(bannerUrl) ?? DEFAULT_BANNER,
       initials: avatarUrl
         ? user.initials
         : sanitizeInitials(cleanUsername.slice(0, 2).toUpperCase() || user.initials),
@@ -173,7 +174,7 @@ export default function ProfileEditModal({ user, onSave, onClose }) {
             <p className="profile-edit-modal__label">Banner</p>
             <div className="profile-edit-modal__banner">
               <img
-                src={bannerUrl || DEFAULT_BANNER}
+                src={sanitizeImageUrl(bannerUrl) ?? DEFAULT_BANNER}
                 alt=""
                 className="profile-edit-modal__banner-img"
                 referrerPolicy="no-referrer"

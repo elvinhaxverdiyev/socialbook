@@ -22,9 +22,9 @@ export default function Header({ onMenuClick, menuOpen = false }) {
           type="button"
           className="header__logo font-display"
           onClick={goHome}
-          aria-label="Rəf — əsas səhifə"
+          aria-label="Kitabci.com — əsas səhifə"
         >
-          Rəf
+          Kitabci<span className="header__logo-dot">.com</span>
         </button>
 
         <div className="header__actions">

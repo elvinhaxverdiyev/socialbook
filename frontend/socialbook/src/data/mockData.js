@@ -31,7 +31,7 @@ export const initialShelfBooks = [
 export const initialPosts = [
   {
     id: 1,
-    type: 'review',
+    type: 'finished',
     user: { name: 'Rəşad Quliyev', handle: '@rashad_g', initials: 'RQ' },
     time: '2 saat əvvəl',
     book: { title: 'Kür qırağının meşələri', author: 'Anar', cover: '#7A2331' },
@@ -402,7 +402,7 @@ export const initialBlockedUsers = [
 export const aboutContent = {
   title: 'Haqqımızda',
   paragraphs: [
-    'Rəf — kitabsevərlər, oxucular və mağazalar üçün sosial platformadır. Burada kitab haqqında fikir paylaşa, oxuma irəliləyişini qeyd edə, eləcə də kitab ala və sata bilərsən.',
+    'Kitabci.com — kitabsevərlər, oxucular və mağazalar üçün sosial platformadır. Burada kitab haqqında fikir paylaşa, oxuma irəliləyişini qeyd edə, eləcə də kitab ala və sata bilərsən.',
     'Missiyamız oxumağı bir icma təcrübəsinə çevirməkdir. Gələcəkdə mağazalar və istifadəçilər birbaşa platforma üzərindən əlaqə saxlayacaq.',
     'Hazırda layihə inkişaf mərhələsindədir. Təklif və iradlərinizi gözləyirik.',
   ],
@@ -413,7 +413,7 @@ export const termsContent = {
   sections: [
     {
       heading: '1. Ümumi qaydalar',
-      text: 'Rəf platformasından istifadə edərkən Azərbaycan Respublikasının qanunvericiliyinə və ictimai davranış normalarına riayət etməlisiniz.',
+      text: 'Kitabci.com platformasından istifadə edərkən Azərbaycan Respublikasının qanunvericiliyinə və ictimai davranış normalarına riayət etməlisiniz.',
     },
     {
       heading: '2. Məzmun',

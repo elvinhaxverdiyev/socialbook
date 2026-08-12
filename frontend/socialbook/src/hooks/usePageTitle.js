@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
+import { sanitizeDocumentTitle } from '../utils/security';
 
-const BASE_TITLE = 'Rəf — Kitab Sosial Şəbəkəsi';
+const BASE_TITLE = 'Kitabci.com — Kitab İcması';
 
 /** Sets `document.title` while mounted; restores the base brand title on cleanup. */
 export default function usePageTitle(title) {
   useEffect(() => {
-    const next = title?.trim() ? `${title.trim()} · Rəf` : BASE_TITLE;
+    const safeTitle = title?.trim() ? sanitizeDocumentTitle(title) : '';
+    const next = safeTitle ? `${safeTitle} · Kitabci.com` : BASE_TITLE;
     document.title = next;
     return () => {
       document.title = BASE_TITLE;
