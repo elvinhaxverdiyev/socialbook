@@ -1,21 +1,28 @@
 import { useEffect } from 'react';
 
-/** Locks document scroll while `locked` is true; restores previous overflow on cleanup. */
+let lockCount = 0;
+let savedHtmlOverflow = '';
+let savedBodyOverflow = '';
+
+/** Locks document scroll while `locked` is true; supports nested modals safely. */
 export default function useBodyScrollLock(locked = true) {
   useEffect(() => {
     if (!locked) return undefined;
 
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyOverflow = body.style.overflow;
-
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
+    if (lockCount === 0) {
+      savedHtmlOverflow = document.documentElement.style.overflow;
+      savedBodyOverflow = document.body.style.overflow;
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    }
+    lockCount += 1;
 
     return () => {
-      html.style.overflow = prevHtmlOverflow;
-      body.style.overflow = prevBodyOverflow;
+      lockCount = Math.max(0, lockCount - 1);
+      if (lockCount === 0) {
+        document.documentElement.style.overflow = savedHtmlOverflow;
+        document.body.style.overflow = savedBodyOverflow;
+      }
     };
   }, [locked]);
 }

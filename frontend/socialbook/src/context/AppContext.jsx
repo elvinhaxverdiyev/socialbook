@@ -17,7 +17,14 @@ import {
   followersList,
   suggestionPool,
   getDisplayUsername,
+  userProfiles,
 } from '../data/mockData';
+import {
+  DEFAULT_SHELF_THEME,
+  loadShelfThemesFromStorage,
+  sanitizeShelfTheme,
+  saveShelfThemeToStorage,
+} from '../data/shelfTheme';
 import { DEFAULT_BANNER } from '../data/media';
 import {
   ALLOWED_CONDITIONS,
@@ -156,6 +163,7 @@ export function AppProvider({ children }) {
   const [likedCommentKeys, setLikedCommentKeys] = useState(new Set());
   const [blockedUsers, setBlockedUsers] = useState(initialBlockedUsers);
   const [shelfBooks, setShelfBooks] = useState(initialShelfBooks);
+  const [shelfThemes, setShelfThemes] = useState(() => loadShelfThemesFromStorage());
   const [notifications, setNotifications] = useState(initialNotifications);
   const [colorMode, setColorMode] = useState(getInitialColorMode);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -413,6 +421,27 @@ export function AppProvider({ children }) {
     setShelfBooks((prev) =>
       prev.map((book) => (book.id === id ? { ...book, status } : book)),
     );
+  };
+
+  const getShelfTheme = useCallback(
+    (handle) => {
+      if (!handle || !isValidHandle(handle)) return DEFAULT_SHELF_THEME;
+      if (shelfThemes[handle]) return shelfThemes[handle];
+      const mockTheme = userProfiles[handle]?.shelfTheme;
+      if (mockTheme) return sanitizeShelfTheme(mockTheme);
+      return DEFAULT_SHELF_THEME;
+    },
+    [shelfThemes],
+  );
+
+  const updateShelfTheme = (theme) => {
+    if (!requireAuth('Rəfi bəzəmək üçün daxil ol.')) return false;
+    const handle = accountUser.handle;
+    if (!isValidHandle(handle)) return false;
+
+    const next = sanitizeShelfTheme(theme);
+    setShelfThemes((prev) => ({ ...prev, [handle]: next }));
+    return saveShelfThemeToStorage(handle, next);
   };
 
   const logout = () => {
@@ -1020,6 +1049,8 @@ export function AppProvider({ children }) {
     addShelfBook,
     removeShelfBook,
     updateShelfBookStatus,
+    getShelfTheme,
+    updateShelfTheme,
     notifications: filteredNotifications,
     unreadNotificationsCount,
     markNotificationRead,

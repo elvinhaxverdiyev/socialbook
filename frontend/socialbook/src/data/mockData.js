@@ -257,6 +257,14 @@ export const userProfiles = {
     initials: 'RQ',
     bio: 'Klassik ədəbiyyat və müasir Azərbaycanca proza. Həftəlik kitab rəyləri yazıram.',
     bannerUrl: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1400&q=80',
+    shelfTheme: {
+      wallColor: '#22304F',
+      plankColor: '#9A7348',
+      stickers: [
+        { emoji: '📚', x: 8, y: 10 },
+        { emoji: '✨', x: 78, y: 8 },
+      ],
+    },
     shelfBooks: [
       { id: 101, title: 'Kür qırağının meşələri', author: 'Anar', cover: '#7A2331', status: 'finished' },
       { id: 102, title: 'Xəmsə', author: 'Nizami', cover: '#435A45', status: 'reading' },
@@ -280,6 +288,15 @@ export const userProfiles = {
     initials: 'NƏ',
     bio: 'Satış elanları və oxuma qeydləri. Dünya klassikası kolleksiyaçısı.',
     bannerUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1400&q=80',
+    shelfTheme: {
+      wallColor: '#7A1F2B',
+      plankColor: '#B08D3D',
+      stickers: [
+        { emoji: '🌸', x: 6, y: 10 },
+        { emoji: '📖', x: 48, y: 5 },
+        { emoji: '⭐', x: 92, y: 14 },
+      ],
+    },
     shelfBooks: [
       { id: 201, title: 'Səfillər', author: 'Victor Hugo', cover: '#22304F', status: 'finished' },
       { id: 202, title: 'Anna Karenina', author: 'Tolstoy', cover: '#7A2331', status: 'reading' },
@@ -306,6 +323,11 @@ export const userProfiles = {
     initials: 'KV',
     bio: 'Fantastika və uşaq ədəbiyyatı. Ucuz ikinci əl kitablar satıram.',
     bannerUrl: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=1400&q=80',
+    shelfTheme: {
+      wallColor: '#435A45',
+      plankColor: '#6A4D2E',
+      stickers: [{ emoji: '🔥', x: 22, y: 6 }],
+    },
     shelfBooks: [
       { id: 301, title: 'Harry Potter və Fəlsəfə Daşı', author: 'J.K. Rowling', cover: '#7A2331', status: 'want' },
       { id: 302, title: 'Hobbit', author: 'Tolkien', cover: '#435A45', status: 'finished' },

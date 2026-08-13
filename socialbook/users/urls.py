@@ -9,6 +9,10 @@ from apis.users_apis.auth_v1_apis import (
     RegisterAPIView,
     LoginAPIView,
 )
+from apis.users_apis.shelf_theme_v1_apis import (
+    MyShelfThemeAPIView,
+    UserShelfThemeAPIView,
+)
 
 
 urlpatterns = [
@@ -26,6 +30,18 @@ urlpatterns = [
         'login/',
         LoginAPIView.as_view(),
         name='login'
+    ),
+
+    # Rəf teması
+    path(
+        'me/shelf-theme/',
+        MyShelfThemeAPIView.as_view(),
+        name='my-shelf-theme',
+    ),
+    path(
+        'users/<str:username>/shelf-theme/',
+        UserShelfThemeAPIView.as_view(),
+        name='user-shelf-theme',
     ),
 
     # JWT autentifikasiya (giriş yalnız /login/ — email ilə)

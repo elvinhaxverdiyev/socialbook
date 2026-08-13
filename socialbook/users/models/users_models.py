@@ -4,6 +4,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 
+from users.shelf_theme import default_shelf_theme
+
 
 
 def user_avatar_path(instance, filename):
@@ -37,6 +39,7 @@ class User(AbstractUser):
     age = models.PositiveIntegerField(blank=True, null=True)
     is_email_verified = models.BooleanField(default=False)
     password_changed_at = models.DateTimeField(null=True, blank=True)
+    shelf_theme = models.JSONField(default=default_shelf_theme, blank=True)
     current_status = models.CharField(
         max_length=20,
         choices=CURRENT_STATUS_CHOICES,

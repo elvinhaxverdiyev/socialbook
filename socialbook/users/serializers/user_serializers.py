@@ -35,6 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
     followers_count = serializers.IntegerField(read_only=True)
     posts_count = serializers.IntegerField(read_only=True)
     shelf_count = serializers.IntegerField(read_only=True)
+    shelf_theme = serializers.SerializerMethodField()
 
     is_following = serializers.SerializerMethodField()
     is_self = serializers.SerializerMethodField()
@@ -57,6 +58,7 @@ class UserSerializer(serializers.ModelSerializer):
             'followers_count',
             'posts_count',
             'shelf_count',
+            'shelf_theme',
             'is_following',
             'is_self',
             'created_at',
@@ -65,6 +67,11 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'is_email_verified', 'created_at', 'updated_at',
         ]
+
+    def get_shelf_theme(self, obj):
+        from users.shelf_theme import sanitize_shelf_theme
+
+        return sanitize_shelf_theme(obj.shelf_theme)
 
     def get_is_following(self, obj):
         request = self.context.get('request')
