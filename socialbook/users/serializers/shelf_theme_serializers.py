@@ -1,13 +1,15 @@
+import uuid
+
 from rest_framework import serializers
 
 from users.shelf_theme import (
     SHELF_PLANK_PRESETS,
+    SHELF_SECTION_KEYS,
     SHELF_STICKER_OPTIONS,
     SHELF_WALL_PRESETS,
     clamp_sticker_position,
     sanitize_shelf_theme,
 )
-import uuid
 
 
 class ShelfStickerSerializer(serializers.Serializer):
@@ -29,9 +31,10 @@ class ShelfStickerSerializer(serializers.Serializer):
         return attrs
 
 
-class ShelfThemeSerializer(serializers.Serializer):
+class ShelfSectionThemeSerializer(serializers.Serializer):
     """
-    Rəf teması — frontend ilə eyni camelCase format.
+    Tək bölmə (`reading`/`finished`/`want`) teması — frontend ilə eyni
+    camelCase format.
     """
 
     wallColor = serializers.ChoiceField(choices=SHELF_WALL_PRESETS)
@@ -45,6 +48,32 @@ class ShelfThemeSerializer(serializers.Serializer):
         if len(stickers) > len(SHELF_STICKER_OPTIONS):
             raise serializers.ValidationError("Stiker sayı limitdən artıqdır.")
         return stickers
+
+
+class ShelfThemeSerializer(serializers.Serializer):
+    """
+    Bütün rəf teması — `{ sections: { reading, finished, want } }`.
+    Çıxışda/daxilə alınan datada həmişə bu üç açar sanitize edilərək təmin
+    olunur (bax `sanitize_shelf_theme`), ona görə `to_representation` və
+    `create`/`update` birbaşa ora yönləndirir.
+    """
+
+    sections = serializers.DictField(
+        child=ShelfSectionThemeSerializer(),
+        required=False,
+    )
+
+    def validate_sections(self, sections):
+        unknown = set(sections.keys()) - set(SHELF_SECTION_KEYS)
+        if unknown:
+            raise serializers.ValidationError(
+                f"Naməlum rəf bölməsi: {', '.join(sorted(unknown))}"
+            )
+        return sections
+
+    def to_internal_value(self, data):
+        attrs = super().to_internal_value(data)
+        return sanitize_shelf_theme(attrs)
 
     def to_representation(self, instance):
         if isinstance(instance, dict):

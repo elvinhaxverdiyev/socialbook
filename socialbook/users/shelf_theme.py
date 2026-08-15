@@ -1,5 +1,8 @@
 """
-Rəf teması — frontend `shelfTheme.js` ilə uyğun sabitlər və təmizləmə.
+Rəf teması — frontend `data/shelfTheme.js` ilə uyğun sabitlər və təmizləmə.
+Hər bölmə (`reading`/`finished`/`want`) öz divar/rəf rəngi və stikerlərinə
+malikdir; köhnə "flat" format (`{wallColor, plankColor, stickers}`) hər üç
+bölməyə tətbiq edilərək avtomatik miqrasiya olunur.
 """
 import re
 import uuid
@@ -48,25 +51,31 @@ SHELF_STICKER_OPTIONS = (
     "🔥",
 )
 
+SHELF_SECTION_KEYS = ("reading", "finished", "want")
+
 WALL_SET = set(SHELF_WALL_PRESETS)
 PLANK_SET = set(SHELF_PLANK_PRESETS)
 STICKER_SET = set(SHELF_STICKER_OPTIONS)
 MAX_STORED_STICKERS = len(SHELF_STICKER_OPTIONS)
 
-DEFAULT_SHELF_THEME = {
+DEFAULT_SHELF_SECTION_THEME = {
     "wallColor": "#C9B89A",
     "plankColor": "#C4A06A",
     "stickers": [],
 }
 
 
-def default_shelf_theme():
-    """JSONField üçün callable default (mutable dict problemi olmasın)."""
+def _default_section_theme():
     return {
-        "wallColor": DEFAULT_SHELF_THEME["wallColor"],
-        "plankColor": DEFAULT_SHELF_THEME["plankColor"],
+        "wallColor": DEFAULT_SHELF_SECTION_THEME["wallColor"],
+        "plankColor": DEFAULT_SHELF_SECTION_THEME["plankColor"],
         "stickers": [],
     }
+
+
+def default_shelf_theme():
+    """JSONField üçün callable default (mutable dict problemi olmasın)."""
+    return {"sections": {key: _default_section_theme() for key in SHELF_SECTION_KEYS}}
 
 
 def _clamp_percent(value, default=50):
@@ -103,12 +112,12 @@ def _sanitize_sticker_id(value):
     return _create_sticker_id()
 
 
-def sanitize_shelf_theme(raw=None, fallback=None):
+def sanitize_shelf_section_theme(raw, fallback=None):
     """
-    DB, request və ya pozulmuş JSON-dan təhlükəsiz tema qaytarır.
-    Frontend `sanitizeShelfTheme` ilə eyni məntiq.
+    Tək bölmə (`reading`/`finished`/`want`) üçün divar/rəf rəngi + stikerləri
+    təmizləyir. Frontend `sanitizeShelfSectionTheme` ilə eyni məntiq.
     """
-    base = fallback or DEFAULT_SHELF_THEME
+    base = fallback or DEFAULT_SHELF_SECTION_THEME
     if not isinstance(raw, dict):
         raw = {}
 
@@ -120,7 +129,7 @@ def sanitize_shelf_theme(raw=None, fallback=None):
     seen_emojis = set()
 
     if isinstance(stickers_raw, list):
-        for index, item in enumerate(stickers_raw[:MAX_STORED_STICKERS]):
+        for item in stickers_raw[:MAX_STORED_STICKERS]:
             if not isinstance(item, dict):
                 continue
             emoji = item.get("emoji")
@@ -143,3 +152,31 @@ def sanitize_shelf_theme(raw=None, fallback=None):
         "plankColor": plank_color,
         "stickers": stickers,
     }
+
+
+def sanitize_shelf_theme(raw=None, fallback=None):
+    """
+    DB, request və ya pozulmuş JSON-dan təhlükəsiz `{sections: {...}}` teması
+    qaytarır. Köhnə "flat" format (`wallColor`/`plankColor`/`stickers` birbaşa
+    kökdə) aşkarlanarsa hər üç bölməyə tətbiq edilir (miqrasiya).
+    Frontend `sanitizeShelfTheme` ilə eyni məntiq.
+    """
+    fallback_sections = (fallback or {}).get("sections") or {}
+    if not isinstance(raw, dict):
+        raw = {}
+
+    raw_sections = raw.get("sections")
+    legacy_theme = raw if (raw.get("wallColor") or raw.get("plankColor") or raw.get("stickers")) else None
+
+    sections = {}
+    for key in SHELF_SECTION_KEYS:
+        section_raw = None
+        if isinstance(raw_sections, dict):
+            section_raw = raw_sections.get(key)
+        if section_raw is None:
+            section_raw = legacy_theme
+
+        section_fallback = fallback_sections.get(key) or DEFAULT_SHELF_SECTION_THEME
+        sections[key] = sanitize_shelf_section_theme(section_raw, section_fallback)
+
+    return {"sections": sections}

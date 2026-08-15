@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { shelfStatuses } from '../../data/constants';
 import { findBookByTitle } from '../../data/books';
-import { shelfThemeToCssVars } from '../../data/shelfTheme';
+import { getShelfSectionTheme, shelfThemeToCssVars } from '../../data/shelfTheme';
 import { useApp } from '../../context/AppContext';
 import { LIMITS, sanitizeHexColor } from '../../utils/security';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
@@ -77,7 +77,6 @@ export default function BookShelf({
 
   const themeHandle = readOnly ? ownerHandle : currentUser.handle;
   const shelfTheme = getShelfTheme(themeHandle);
-  const shelfCssVars = shelfThemeToCssVars(shelfTheme);
 
   const displayBooks = books ?? shelfBooks;
   const [showForm, setShowForm] = useState(false);
@@ -164,7 +163,6 @@ export default function BookShelf({
       className={`book-shelf${readOnly ? ' book-shelf--readonly' : ''}${
         embedded ? ' book-shelf--embedded' : ''
       } book-shelf--themed`}
-      style={shelfCssVars}
     >
       {!embedded && (
         <div className="book-shelf__header">
@@ -242,6 +240,7 @@ export default function BookShelf({
       ) : (
         shelfStatuses.map((cat) => {
           const catBooks = displayBooks.filter((b) => (b.status || 'want') === cat.value);
+          const sectionTheme = getShelfSectionTheme(shelfTheme, cat.value);
           return (
             <div className="book-shelf__block" key={cat.value}>
               <div className="book-shelf__block-head">
@@ -271,9 +270,13 @@ export default function BookShelf({
                 )}
               </div>
 
-              <div className="book-shelf__rail-wrap" data-sticker-dropzone>
+              <div
+                className="book-shelf__rail-wrap"
+                data-sticker-dropzone
+                style={shelfThemeToCssVars(sectionTheme)}
+              >
                 <div className="book-shelf__rail-back" aria-hidden="true" />
-                {shelfTheme.stickers.map((sticker) => (
+                {sectionTheme.stickers.map((sticker) => (
                   <DraggableShelfSticker key={`${cat.value}-${sticker.id}`} sticker={sticker} />
                 ))}
                 <div

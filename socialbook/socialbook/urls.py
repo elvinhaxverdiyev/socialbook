@@ -7,6 +7,10 @@ from django.urls import include
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include("users.urls")),
+    path("api/v1/", include("books.urls")),
+    path("api/v1/", include("shelves.urls")),
+    path("api/v1/", include("stores.urls")),
+    path("api/v1/", include("apis.urls")),
 ]
 
 if settings.DEBUG:

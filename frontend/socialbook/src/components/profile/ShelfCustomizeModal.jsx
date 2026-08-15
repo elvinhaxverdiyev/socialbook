@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Palette, RotateCcw, X } from 'lucide-react';
 import {
-  DEFAULT_SHELF_THEME,
+  DEFAULT_SHELF_SECTION_THEME,
   SHELF_PLANK_PRESETS,
   SHELF_STICKER_OPTIONS,
   SHELF_WALL_PRESETS,
@@ -11,6 +11,7 @@ import {
   sanitizeShelfTheme,
   shelfThemeToCssVars,
 } from '../../data/shelfTheme';
+import { shelfStatuses } from '../../data/constants';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 import useEscapeKey from '../../hooks/useEscapeKey';
 import useFocusTrap from '../../hooks/useFocusTrap';
@@ -18,7 +19,9 @@ import DraggableShelfSticker from './DraggableShelfSticker';
 
 export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
   const [draft, setDraft] = useState(() => sanitizeShelfTheme(theme));
-  const cssVars = shelfThemeToCssVars(draft);
+  const [selectedSection, setSelectedSection] = useState('reading');
+  const activeTheme = draft.sections[selectedSection];
+  const cssVars = shelfThemeToCssVars(activeTheme);
 
   const handleClose = useCallback(() => onClose?.(), [onClose]);
   const cardRef = useFocusTrap(true);
@@ -27,19 +30,17 @@ export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
 
   const toggleSticker = (emoji) => {
     setDraft((prev) => {
-      const exists = prev.stickers.find((s) => s.emoji === emoji);
-      if (exists) {
-        return {
-          ...prev,
-          stickers: prev.stickers.filter((s) => s.emoji !== emoji),
-        };
-      }
+      const section = prev.sections[selectedSection];
+      const exists = section.stickers.find((s) => s.emoji === emoji);
+      const stickers = exists
+        ? section.stickers.filter((s) => s.emoji !== emoji)
+        : [...section.stickers, { id: createStickerId(), emoji, x: 50, y: 38 }];
       return {
         ...prev,
-        stickers: [
-          ...prev.stickers,
-          { id: createStickerId(), emoji, x: 50, y: 38 },
-        ],
+        sections: {
+          ...prev.sections,
+          [selectedSection]: { ...section, stickers },
+        },
       };
     });
   };
@@ -48,9 +49,25 @@ export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
     const pos = clampStickerPosition(x, y);
     setDraft((prev) => ({
       ...prev,
-      stickers: prev.stickers.map((sticker) =>
-        sticker.id === id ? { ...sticker, x: pos.x, y: pos.y } : sticker,
-      ),
+      sections: {
+        ...prev.sections,
+        [selectedSection]: {
+          ...prev.sections[selectedSection],
+          stickers: prev.sections[selectedSection].stickers.map((sticker) =>
+            sticker.id === id ? { ...sticker, x: pos.x, y: pos.y } : sticker,
+          ),
+        },
+      },
+    }));
+  };
+
+  const updateActiveTheme = (updates) => {
+    setDraft((prev) => ({
+      ...prev,
+      sections: {
+        ...prev.sections,
+        [selectedSection]: { ...prev.sections[selectedSection], ...updates },
+      },
     }));
   };
 
@@ -60,7 +77,7 @@ export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
   };
 
   const handleReset = () => {
-    setDraft({ ...DEFAULT_SHELF_THEME, stickers: [] });
+    updateActiveTheme({ ...DEFAULT_SHELF_SECTION_THEME, stickers: [] });
   };
 
   return createPortal(
@@ -84,7 +101,7 @@ export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
                 Rəfi bəzə
               </h2>
               <p className="shelf-customize__subtitle">
-                Stikerləri seç, sürükləyib rəfdə istədiyin yerə qoy
+                Hər bölmənin rəng və stikerlərini ayrıca seç
               </p>
             </div>
           </div>
@@ -98,6 +115,24 @@ export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
           </button>
         </header>
 
+        <div className="shelf-customize__sections" role="tablist" aria-label="Rəf bölməsi">
+          {shelfStatuses.map((section) => (
+            <button
+              key={section.value}
+              type="button"
+              role="tab"
+              aria-selected={selectedSection === section.value}
+              className={
+                'shelf-customize__section-btn' +
+                (selectedSection === section.value ? ' shelf-customize__section-btn--active' : '')
+              }
+              onClick={() => setSelectedSection(section.value)}
+            >
+              {section.label}
+            </button>
+          ))}
+        </div>
+
         <div className="shelf-customize__preview book-shelf--themed" style={cssVars}>
           <div className="shelf-customize__preview-rail" data-sticker-dropzone>
             <div className="book-shelf__rail-back" aria-hidden="true" />
@@ -106,7 +141,7 @@ export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
               <span style={{ background: '#435A45' }} />
               <span style={{ background: '#22304F' }} />
             </div>
-            {draft.stickers.map((sticker) => (
+            {activeTheme.stickers.map((sticker) => (
               <DraggableShelfSticker
                 key={sticker.id}
                 sticker={sticker}
@@ -116,7 +151,7 @@ export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
             ))}
             <div className="book-shelf__plank" aria-hidden="true" />
             <div className="book-shelf__plank-edge" aria-hidden="true" />
-            {draft.stickers.length === 0 && (
+            {activeTheme.stickers.length === 0 && (
               <p className="shelf-customize__drop-hint">Stiker əlavə et və bura sürüklə</p>
             )}
           </div>
@@ -131,10 +166,10 @@ export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
                 type="button"
                 className={
                   'book-shelf__swatch' +
-                  (draft.wallColor === color ? ' book-shelf__swatch--selected' : '')
+                  (activeTheme.wallColor === color ? ' book-shelf__swatch--selected' : '')
                 }
                 style={{ background: color }}
-                onClick={() => setDraft((prev) => ({ ...prev, wallColor: color }))}
+                onClick={() => updateActiveTheme({ wallColor: color })}
                 aria-label={`Arxa fon ${color}`}
               />
             ))}
@@ -150,10 +185,10 @@ export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
                 type="button"
                 className={
                   'book-shelf__swatch' +
-                  (draft.plankColor === color ? ' book-shelf__swatch--selected' : '')
+                  (activeTheme.plankColor === color ? ' book-shelf__swatch--selected' : '')
                 }
                 style={{ background: color }}
-                onClick={() => setDraft((prev) => ({ ...prev, plankColor: color }))}
+                onClick={() => updateActiveTheme({ plankColor: color })}
                 aria-label={`Taxta ${color}`}
               />
             ))}
@@ -167,7 +202,7 @@ export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
           </label>
           <div className="shelf-customize__stickers">
             {SHELF_STICKER_OPTIONS.map((emoji) => {
-              const active = draft.stickers.some((s) => s.emoji === emoji);
+              const active = activeTheme.stickers.some((s) => s.emoji === emoji);
               return (
                 <button
                   key={emoji}
@@ -190,7 +225,7 @@ export default function ShelfCustomizeModal({ theme, onSave, onClose }) {
         <footer className="shelf-customize__actions">
           <button type="button" className="btn btn--ghost btn--sm" onClick={handleReset}>
             <RotateCcw size={14} />
-            Standart
+            Bu bölməni sıfırla
           </button>
           <div className="shelf-customize__actions-right">
             <button type="button" className="btn btn--ghost btn--sm" onClick={handleClose}>

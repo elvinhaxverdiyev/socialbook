@@ -50,6 +50,7 @@ import {
 const AppContext = createContext(null);
 const COLOR_MODE_KEY = 'kitabci-color-mode';
 const LEGACY_COLOR_MODE_KEY = 'ref-color-mode';
+const AUTH_KEY = 'kitabci-auth';
 const SUGGESTION_SLOTS = 3;
 const AUTH_PAGES = new Set(['profile', 'notifications', 'saved']);
 
@@ -135,6 +136,14 @@ function getInitialColorMode() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+function getInitialLoggedIn() {
+  try {
+    return localStorage.getItem(AUTH_KEY) !== 'out';
+  } catch {
+    return true;
+  }
+}
+
 export function AppProvider({ children }) {
   const [posts, setPosts] = useState(initialPosts);
   const [activePage, setActivePage] = useState('home');
@@ -166,7 +175,7 @@ export function AppProvider({ children }) {
   const [shelfThemes, setShelfThemes] = useState(() => loadShelfThemesFromStorage());
   const [notifications, setNotifications] = useState(initialNotifications);
   const [colorMode, setColorMode] = useState(getInitialColorMode);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(getInitialLoggedIn);
   const [authModal, setAuthModal] = useState({ open: false, mode: 'login', reason: '' });
   const [navStack, setNavStack] = useState([]);
   const skipNavPush = useRef(false);
@@ -286,6 +295,14 @@ export function AppProvider({ children }) {
     const color = colorMode === 'dark' ? '#1a1817' : '#7A1F2B';
     themeMeta.forEach((meta) => meta.setAttribute('content', color));
   }, [colorMode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(AUTH_KEY, isLoggedIn ? 'in' : 'out');
+    } catch {
+      // storage bloklanıbsa sessiya yalnız bu tab üçün qalır
+    }
+  }, [isLoggedIn]);
 
   const openAuthModal = (mode = 'login', reason = '') => {
     setAuthModal({

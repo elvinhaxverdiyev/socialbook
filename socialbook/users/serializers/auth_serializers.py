@@ -23,12 +23,14 @@ class RegisterSerializer(serializers.ModelSerializer):
             "id",
             "username",
             "email",
+            "gender",
             "password",
             "password2",
         )
         extra_kwargs = {
             "username": {"required": True, "allow_blank": False},
             "email": {"required": True, "allow_blank": False},
+            "gender": {"required": True},
         }
 
     def validate_email(self, value):
@@ -54,5 +56,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             username=validated_data["username"],
             email=validated_data["email"],
             password=validated_data["password"],
+            gender=validated_data.get("gender", ""),
         )
         return user
