@@ -8,12 +8,16 @@ import {
   BookMarked,
   BookOpen,
   ArrowRight,
+  Palette,
 } from 'lucide-react';
 import { shelfStatuses } from '../../data/constants';
 import { findBookByTitle } from '../../data/books';
+import { shelfThemeToCssVars } from '../../data/shelfTheme';
 import { useApp } from '../../context/AppContext';
 import { LIMITS, sanitizeHexColor } from '../../utils/security';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
+import ShelfCustomizeModal from './ShelfCustomizeModal';
+import DraggableShelfSticker from './DraggableShelfSticker';
 
 const COVER_COLORS = ['#7A2331', '#435A45', '#B08D3D', '#22304F', '#6B4C8A', '#2E6B5A'];
 const BOOK_HEIGHT = 108;
@@ -65,10 +69,19 @@ export default function BookShelf({
     updateShelfBookStatus,
     openShelfPage,
     openBook,
+    currentUser,
+    getShelfTheme,
+    updateShelfTheme,
+    isLoggedIn,
   } = useApp();
+
+  const themeHandle = readOnly ? ownerHandle : currentUser.handle;
+  const shelfTheme = getShelfTheme(themeHandle);
+  const shelfCssVars = shelfThemeToCssVars(shelfTheme);
 
   const displayBooks = books ?? shelfBooks;
   const [showForm, setShowForm] = useState(false);
+  const [showCustomize, setShowCustomize] = useState(false);
   const [selected, setSelected] = useState(null);
   const [justAdded, setJustAdded] = useState(null);
   const [removingId, setRemovingId] = useState(null);
@@ -87,6 +100,7 @@ export default function BookShelf({
       if (e.key === 'Escape') {
         setSelected(null);
         setShowForm(false);
+        setShowCustomize(false);
       }
     }
     window.addEventListener('keydown', onKey);
@@ -149,7 +163,8 @@ export default function BookShelf({
     <section
       className={`book-shelf${readOnly ? ' book-shelf--readonly' : ''}${
         embedded ? ' book-shelf--embedded' : ''
-      }`}
+      } book-shelf--themed`}
+      style={shelfCssVars}
     >
       {!embedded && (
         <div className="book-shelf__header">
@@ -163,20 +178,51 @@ export default function BookShelf({
             </div>
             <span className="book-shelf__count">{displayBooks.length}</span>
           </div>
-          {!readOnly && (
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm book-shelf__toggle"
-              onClick={() => openAddForm('reading')}
-            >
-              <Plus size={14} />
-              Kitab əlavə et
-            </button>
+          {!readOnly && isLoggedIn && (
+            <div className="book-shelf__header-actions">
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm book-shelf__toggle"
+                onClick={() => setShowCustomize(true)}
+              >
+                <Palette size={14} />
+                Rəfi bəzə
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm book-shelf__toggle"
+                onClick={() => openAddForm('reading')}
+              >
+                <Plus size={14} />
+                Kitab əlavə et
+              </button>
+            </div>
           )}
         </div>
       )}
 
-      {embedded && !readOnly && (
+      {embedded && !readOnly && isLoggedIn && (
+        <div className="book-shelf__embedded-actions">
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => setShowCustomize(true)}
+          >
+            <Palette size={14} />
+            Rəfi bəzə
+          </button>
+          <button
+            type="button"
+            className="btn btn--primary btn--sm"
+            onClick={() => openAddForm('reading')}
+          >
+            <Plus size={14} />
+            Kitab əlavə et
+          </button>
+        </div>
+      )}
+
+      {embedded && !readOnly && !isLoggedIn && (
         <div className="book-shelf__embedded-actions">
           <button
             type="button"
@@ -225,8 +271,11 @@ export default function BookShelf({
                 )}
               </div>
 
-              <div className="book-shelf__rail-wrap">
+              <div className="book-shelf__rail-wrap" data-sticker-dropzone>
                 <div className="book-shelf__rail-back" aria-hidden="true" />
+                {shelfTheme.stickers.map((sticker) => (
+                  <DraggableShelfSticker key={`${cat.value}-${sticker.id}`} sticker={sticker} />
+                ))}
                 <div
                   className="book-shelf__rail"
                   ref={(el) => {
@@ -420,6 +469,16 @@ export default function BookShelf({
             })()}
           </div>
         </div>
+      )}
+
+      {showCustomize && !readOnly && isLoggedIn && (
+        <ShelfCustomizeModal
+          theme={shelfTheme}
+          onSave={(nextTheme) => {
+            if (updateShelfTheme(nextTheme)) setShowCustomize(false);
+          }}
+          onClose={() => setShowCustomize(false)}
+        />
       )}
 
       {showForm && !readOnly && (
