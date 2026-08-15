@@ -134,16 +134,20 @@ export default function SettingsPage() {
                 className={`mode-toggle__btn ${colorMode === 'light' ? 'mode-toggle__btn--active' : ''}`}
                 onClick={() => setColorMode('light')}
                 aria-pressed={colorMode === 'light'}
+                aria-label="İşıqlı"
+                title="İşıqlı"
               >
-                İşıqlı
+                <Sun size={16} aria-hidden="true" />
               </button>
               <button
                 type="button"
                 className={`mode-toggle__btn ${colorMode === 'dark' ? 'mode-toggle__btn--active' : ''}`}
                 onClick={() => setColorMode('dark')}
                 aria-pressed={colorMode === 'dark'}
+                aria-label="Qaranlıq"
+                title="Qaranlıq"
               >
-                Qaranlıq
+                <Moon size={16} aria-hidden="true" />
               </button>
             </div>
           </li>

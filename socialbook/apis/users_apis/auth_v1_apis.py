@@ -45,7 +45,6 @@ class LoginAPIView(APIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            # timing fərqini azaltmaq üçün "boş" bir hash yoxlaması edirik
             User().set_password(password)
             return Response(generic_error, status=400)
 

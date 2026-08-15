@@ -7,24 +7,12 @@ from rest_framework.views import APIView
 
 from users.shelf_theme import sanitize_shelf_theme
 from users.serializers.shelf_theme_serializers import ShelfThemeSerializer
+from users.utils import normalize_username
 
 User = get_user_model()
 
 
-def _normalize_username(value):
-    if not isinstance(value, str):
-        return ""
-    return value.strip().lstrip("@")
-
-
 class MyShelfThemeAPIView(APIView):
-    """
-    Öz rəf teması:
-    - GET  → cari temanı qaytarır
-    - PUT  → temanı yeniləyir (tam əvəz)
-    - PATCH → temanı yeniləyir (tam əvəz, eyni məntiq)
-    """
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -40,7 +28,7 @@ class MyShelfThemeAPIView(APIView):
     def _save_theme(self, request):
         serializer = ShelfThemeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        theme = sanitize_shelf_theme(serializer.validated_data)
+        theme = serializer.validated_data  # to_internal_value artıq sanitize edir
 
         request.user.shelf_theme = theme
         request.user.save(update_fields=["shelf_theme", "updated_at"])
@@ -57,7 +45,7 @@ class UserShelfThemeAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, username):
-        clean = _normalize_username(username)
+        clean = normalize_username(username)
         if not clean:
             return Response(
                 {"error": "İstifadəçi adı tələb olunur."},

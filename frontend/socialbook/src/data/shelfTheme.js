@@ -55,10 +55,21 @@ export const SHELF_STICKER_SLOTS = [
   { x: 64, y: 12 },
 ];
 
-export const DEFAULT_SHELF_THEME = {
+export const SHELF_SECTION_KEYS = ['reading', 'finished', 'want'];
+
+export const DEFAULT_SHELF_SECTION_THEME = {
   wallColor: '#C9B89A',
   plankColor: '#C4A06A',
   stickers: [],
+};
+
+export const DEFAULT_SHELF_THEME = {
+  sections: Object.fromEntries(
+    SHELF_SECTION_KEYS.map((key) => [
+      key,
+      { ...DEFAULT_SHELF_SECTION_THEME, stickers: [] },
+    ]),
+  ),
 };
 
 const STICKER_SET = new Set(SHELF_STICKER_OPTIONS);
@@ -119,8 +130,8 @@ function hexShades(hex) {
   };
 }
 
-export function sanitizeShelfTheme(raw, fallback = DEFAULT_SHELF_THEME) {
-  const base = fallback || DEFAULT_SHELF_THEME;
+function sanitizeShelfSectionTheme(raw, fallback = DEFAULT_SHELF_SECTION_THEME) {
+  const base = fallback || DEFAULT_SHELF_SECTION_THEME;
   const wallColor = sanitizeThemeColor(raw?.wallColor, WALL_SET, base.wallColor);
   const plankColor = sanitizeThemeColor(raw?.plankColor, PLANK_SET, base.plankColor);
 
@@ -149,8 +160,30 @@ export function sanitizeShelfTheme(raw, fallback = DEFAULT_SHELF_THEME) {
   return { wallColor, plankColor, stickers };
 }
 
-export function shelfThemeToCssVars(theme) {
+export function sanitizeShelfTheme(raw, fallback = DEFAULT_SHELF_THEME) {
+  const fallbackSections = fallback?.sections || DEFAULT_SHELF_THEME.sections;
+  const legacyTheme = raw?.wallColor || raw?.plankColor || raw?.stickers ? raw : null;
+
+  return {
+    sections: Object.fromEntries(
+      SHELF_SECTION_KEYS.map((key) => [
+        key,
+        sanitizeShelfSectionTheme(
+          raw?.sections?.[key] || legacyTheme,
+          fallbackSections[key] || DEFAULT_SHELF_SECTION_THEME,
+        ),
+      ]),
+    ),
+  };
+}
+
+export function getShelfSectionTheme(theme, sectionKey) {
   const safe = sanitizeShelfTheme(theme);
+  return safe.sections[sectionKey] || safe.sections.reading;
+}
+
+export function shelfThemeToCssVars(sectionTheme) {
+  const safe = sanitizeShelfSectionTheme(sectionTheme);
   const wall = hexShades(safe.wallColor);
   const plank = hexShades(safe.plankColor);
 

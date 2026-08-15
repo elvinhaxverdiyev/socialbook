@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "users",
     "books",
     "shelves",
+    "stores",
     "apis",
 ]
 

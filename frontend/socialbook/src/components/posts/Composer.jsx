@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ImageIcon } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 import RatingStars from '../ui/RatingStars';
 import BookPicker, { CUSTOM_BOOK } from './BookPicker';
@@ -213,12 +212,9 @@ export default function Composer({ onSubmit }) {
   return (
     <section className="composer">
       <div className="composer__inner">
-        <button type="button" className="composer__photo" title="Şəkil əlavə et">
+        <div className="composer__photo">
           <Avatar initials={currentUser.initials} src={currentUser.avatarUrl} size={40} name={currentUser.name} />
-          <span className="composer__photo-icon">
-            <ImageIcon size={12} />
-          </span>
-        </button>
+        </div>
 
         <div className="composer__body">
           <textarea
