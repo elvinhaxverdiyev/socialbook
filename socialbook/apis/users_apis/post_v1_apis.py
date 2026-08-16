@@ -153,27 +153,3 @@ class SavedPostListAPIView(APIView):
         page = paginator.paginate_queryset(posts, request, view=self)
         serializer = PostSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
-
-
-class SalePostListAPIView(APIView):
-    """
-    GET /api/v1/posts/sales/?category=&author= — `BooksPage` satış tabı.
-    """
-
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        posts = Post.objects.for_feed(request.user).filter(post_type__in=['sale', 'store'])
-
-        category = request.query_params.get('category')
-        if category:
-            posts = posts.filter(category_id=category)
-
-        author = request.query_params.get('author', '').strip()
-        if author:
-            posts = posts.filter(book__author__name__icontains=author)
-
-        paginator = DefaultPagination()
-        page = paginator.paginate_queryset(posts, request, view=self)
-        serializer = PostSerializer(page, many=True, context={'request': request})
-        return paginator.get_paginated_response(serializer.data)

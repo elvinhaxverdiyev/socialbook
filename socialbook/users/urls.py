@@ -25,7 +25,6 @@ from apis.users_apis import (
     RegisterAPIView,
     ReportPostAPIView,
     ReportUserAPIView,
-    SalePostListAPIView,
     SavedPostListAPIView,
     UserDetailAPIView,
     UserFollowersAPIView,
@@ -64,7 +63,6 @@ urlpatterns = [
     # Postlar
     path('posts/', PostListCreateAPIView.as_view(), name='post-list-create'),
     path('posts/saved/', SavedPostListAPIView.as_view(), name='post-saved-list'),
-    path('posts/sales/', SalePostListAPIView.as_view(), name='post-sale-list'),
     path('posts/<int:post_id>/', PostDetailAPIView.as_view(), name='post-detail'),
     path('posts/<int:post_id>/like/', PostLikeAPIView.as_view(), name='post-like'),
     path('posts/<int:post_id>/save/', PostSaveAPIView.as_view(), name='post-save'),

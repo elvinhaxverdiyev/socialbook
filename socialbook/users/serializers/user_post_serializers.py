@@ -6,7 +6,9 @@ from stores.serializers.store_serializers import StoreShortSerializer
 from users.models.user_posts import Post
 from users.serializers.user_serializers import UserShortSerializer
 
-# Composer-in tələb etdiyi sahələr tip üzrə (bax `Composer.jsx`/`security.js`)
+# Composer-in tələb etdiyi sahələr tip üzrə (bax `Composer.jsx`/`security.js`).
+# `sale` postunda kitab yalnız kataloqdan (`Book`) seçilir — rəf elementinin
+# öz `id`-si yox, onun göstərdiyi kitabın `id`-si göndərilməlidir.
 TYPES_REQUIRING_BOOK = {'reading', 'finished', 'sale'}
 TYPES_REQUIRING_SALE_FIELDS = {'sale', 'store'}
 

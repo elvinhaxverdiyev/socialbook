@@ -13,7 +13,6 @@ from .post_v1_apis import (
     PostLikeAPIView,
     PostListCreateAPIView,
     PostSaveAPIView,
-    SalePostListAPIView,
     SavedPostListAPIView,
 )
 from .report_v1_apis import ReportPostAPIView, ReportUserAPIView

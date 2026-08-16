@@ -733,8 +733,18 @@ export function getRelatedPosts(posts, book) {
   });
 }
 
-export function getSalePostsForBook(posts, book) {
-  return getRelatedPosts(posts, book).filter((p) => p.type === 'sale' || p.type === 'store');
+export function getStorePostsForBook(posts, book) {
+  return getRelatedPosts(posts, book).filter((p) => p.type === 'store');
+}
+
+export function getSecondHandPostsForBook(posts, book) {
+  return getRelatedPosts(posts, book).filter((p) => p.type === 'sale');
+}
+
+export function getDiscussionPostsForBook(posts, book) {
+  return getRelatedPosts(posts, book).filter(
+    (p) => p.type !== 'sale' && p.type !== 'store',
+  );
 }
 
 export function sortBooks(books, sortBy) {
