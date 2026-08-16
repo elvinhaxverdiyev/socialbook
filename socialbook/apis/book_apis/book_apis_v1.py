@@ -123,7 +123,10 @@ class BookTypeListAPIView(APIView):
 
 class BookPostsAPIView(APIView):
     """
-    GET /api/v1/books/<id>/posts/ — kitab detalındakı postlar/elanlar.
+    GET /api/v1/books/<id>/posts/?post_type=store — kitab detalı səhifəsi.
+    `post_type` vergüllə bir neçə tip qəbul edir və səhifədəki tabları verir:
+    `store` (kitabın olduğu mağaza elanları), `sale` (ikinci əl elanları),
+    parametrsiz isə bütün postlar (`Bu kitab haqqında`).
     """
 
     permission_classes = [AllowAny]
@@ -134,6 +137,11 @@ class BookPostsAPIView(APIView):
 
         get_object_or_404(Book, pk=book_id)
         posts = Post.objects.filter(book_id=book_id).for_feed(request.user)
+
+        post_type = request.query_params.get('post_type', '').strip()
+        if post_type:
+            types = [item for item in post_type.split(',') if item.strip()]
+            posts = posts.filter(post_type__in=types)
 
         paginator = DefaultPagination()
         page = paginator.paginate_queryset(posts, request, view=self)

@@ -24,7 +24,6 @@ export default function Composer({ onSubmit }) {
   const [price, setPrice] = useState('');
   const [condition, setCondition] = useState('yaxşı');
   const [rating, setRating] = useState(0);
-  const [saleFromShelf, setSaleFromShelf] = useState(false);
 
   const needsBook = type === 'reading' || type === 'finished' || type === 'sale';
   const isCustomBook = bookId === CUSTOM_BOOK;
@@ -67,9 +66,7 @@ export default function Composer({ onSubmit }) {
     return [...shelfOptions, ...catalogOnly];
   }, [shelfOptions, catalogOptions, shelfBooks]);
 
-  const salePickerBooks = saleFromShelf ? shelfOptions : catalogOptions;
-
-  const pickerBooks = isSale ? salePickerBooks : readingPickerBooks;
+  const pickerBooks = isSale ? catalogOptions : readingPickerBooks;
   const selectedBook = pickerBooks.find((book) => book.id === bookId) || null;
 
   const resolvedCategory = useMemo(() => {
@@ -114,7 +111,6 @@ export default function Composer({ onSubmit }) {
     setCondition('yaxşı');
     setRating(0);
     setType('general');
-    setSaleFromShelf(false);
     setExpanded(false);
   };
 
@@ -186,7 +182,6 @@ export default function Composer({ onSubmit }) {
     setTitle('');
     setAuthor('');
     setCategory('');
-    setSaleFromShelf(false);
     if (nextType === 'general') {
       setRating(0);
     }
@@ -199,14 +194,6 @@ export default function Composer({ onSubmit }) {
       setAuthor('');
       setCategory('');
     }
-  };
-
-  const toggleSaleSource = (fromShelf) => {
-    setSaleFromShelf(fromShelf);
-    setBookId('');
-    setTitle('');
-    setAuthor('');
-    setCategory('');
   };
 
   return (
@@ -246,27 +233,7 @@ export default function Composer({ onSubmit }) {
               {needsBook && (
                 <div className={`composer__panel ${isSale ? 'composer__panel--sale' : ''}`}>
                   <div className="composer__block">
-                    <div className="composer__block-head">
-                      <p className="composer__label">Kitab</p>
-                      {isSale && (
-                        <div className="composer__source" role="group" aria-label="Kitab mənbəyi">
-                          <button
-                            type="button"
-                            className={`composer__source-btn ${!saleFromShelf ? 'composer__source-btn--active' : ''}`}
-                            onClick={() => toggleSaleSource(false)}
-                          >
-                            Kataloq
-                          </button>
-                          <button
-                            type="button"
-                            className={`composer__source-btn ${saleFromShelf ? 'composer__source-btn--active' : ''}`}
-                            onClick={() => toggleSaleSource(true)}
-                          >
-                            Rəfimdən
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <p className="composer__label">Kitab</p>
 
                     <BookPicker
                       books={pickerBooks}

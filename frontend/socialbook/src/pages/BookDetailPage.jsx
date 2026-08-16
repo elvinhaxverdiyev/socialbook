@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
-import { BookOpen, Bookmark, CheckCircle2, Check } from 'lucide-react';
+import {
+  BookOpen,
+  Bookmark,
+  CheckCircle2,
+  Check,
+  Store,
+  Tag,
+  MapPin,
+  BadgeCheck,
+  ArrowRight,
+} from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import BookSpine from '../components/ui/BookSpine';
 import RatingStars from '../components/ui/RatingStars';
@@ -9,8 +19,9 @@ import EmptyState from '../components/ui/EmptyState';
 import {
   getBookById,
   getGenreById,
-  getRelatedPosts,
-  getSalePostsForBook,
+  getDiscussionPostsForBook,
+  getSecondHandPostsForBook,
+  getStorePostsForBook,
 } from '../data/books';
 import { bookTypes } from '../data/constants';
 import { sanitizeHexColor } from '../utils/security';
@@ -27,15 +38,18 @@ export default function BookDetailPage() {
     viewedBookId,
     openAuthor,
     openBooks,
+    openPost,
     addShelfBook,
     posts,
     shelfBooks,
   } = useApp();
   const [selectedStatus, setSelectedStatus] = useState(null);
+  const [offerTab, setOfferTab] = useState('stores');
   const book = getBookById(viewedBookId);
 
   useEffect(() => {
     setSelectedStatus(null);
+    setOfferTab('stores');
   }, [viewedBookId]);
 
   if (!book) {
@@ -53,8 +67,10 @@ export default function BookDetailPage() {
   }
 
   const typeLabel = bookTypes.find((t) => t.id === book.type)?.label || book.type;
-  const relatedPosts = getRelatedPosts(posts, book);
-  const salePosts = getSalePostsForBook(posts, book);
+  const discussionPosts = getDiscussionPostsForBook(posts, book);
+  const storePosts = getStorePostsForBook(posts, book);
+  const secondHandPosts = getSecondHandPostsForBook(posts, book);
+  const offers = offerTab === 'stores' ? storePosts : secondHandPosts;
   const shelfEntry = shelfBooks.find(
     (b) => b.bookId === book.id || b.title.toLowerCase() === book.title.toLowerCase(),
   );
@@ -184,40 +200,111 @@ export default function BookDetailPage() {
           </div>
         </section>
 
-        {salePosts.length > 0 && (
-          <section className="book-detail__section">
-            <h2 className="book-detail__section-title font-display">Satışda</h2>
-            <div className="book-detail__sales">
-              {salePosts.map((post) => (
-                <div key={post.id} className="book-detail__sale">
-                  <span className="book-detail__sale-price">
-                    {formatPrice(post.price)}
-                  </span>
-                  <span className="book-detail__sale-seller">
-                    {post.user?.name || post.store?.name}
-                  </span>
-                  {post.condition && (
-                    <span className="book-detail__sale-condition">
-                      {conditionLabels[post.condition]}
+        <section className="book-detail__section">
+          <h2 className="book-detail__section-title font-display">Haradan almaq olar</h2>
+
+          <div className="book-detail__tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={offerTab === 'stores'}
+              className={`book-detail__tab ${offerTab === 'stores' ? 'book-detail__tab--active' : ''}`}
+              onClick={() => setOfferTab('stores')}
+            >
+              <Store size={14} />
+              Mağazalarda
+              {storePosts.length > 0 && (
+                <span className="book-detail__tab-count">{storePosts.length}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={offerTab === 'second-hand'}
+              className={`book-detail__tab ${offerTab === 'second-hand' ? 'book-detail__tab--active' : ''}`}
+              onClick={() => setOfferTab('second-hand')}
+            >
+              <Tag size={14} />
+              İkinci əl
+              {secondHandPosts.length > 0 && (
+                <span className="book-detail__tab-count">{secondHandPosts.length}</span>
+              )}
+            </button>
+          </div>
+
+          {offers.length === 0 ? (
+            <EmptyState
+              icon={offerTab === 'stores' ? Store : Tag}
+              text={
+                offerTab === 'stores'
+                  ? 'Bu kitab hazırda heç bir mağazanın elanında yoxdur.'
+                  : 'Bu kitab üçün ikinci əl elanı yoxdur.'
+              }
+            />
+          ) : (
+            <div className="book-offers">
+              {offers.map((post, index) => {
+                const seller = post.store?.name || post.user?.name || 'Satıcı';
+                return (
+                  <button
+                    key={post.id}
+                    type="button"
+                    className="book-offer"
+                    style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+                    onClick={() => openPost(post.id)}
+                    aria-label={`${seller} elanını aç`}
+                  >
+                    <span className="book-offer__main">
+                      <span className="book-offer__seller font-display">
+                        {seller}
+                        {post.store?.verified && (
+                          <BadgeCheck
+                            size={14}
+                            className="book-offer__verified"
+                            aria-label="Təsdiqlənmiş"
+                          />
+                        )}
+                      </span>
+                      {post.store?.location && (
+                        <span className="book-offer__location">
+                          <MapPin size={12} />
+                          {post.store.location}
+                        </span>
+                      )}
+                      {post.text && <span className="book-offer__text">{post.text}</span>}
+                      {post.condition && (
+                        <span className="book-offer__tags">
+                          <span className="book-offer__condition">
+                            {conditionLabels[post.condition]}
+                          </span>
+                        </span>
+                      )}
                     </span>
-                  )}
-                </div>
-              ))}
+                    <span className="book-offer__meta">
+                      <span className="book-offer__price">{formatPrice(post.price)}</span>
+                      <span className="book-offer__go">
+                        Postu aç
+                        <ArrowRight size={13} />
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-          </section>
-        )}
+          )}
+        </section>
 
         <section className="book-detail__section">
           <h2 className="book-detail__section-title font-display">
             Bu kitab haqqında
           </h2>
-          {relatedPosts.length === 0 ? (
+          {discussionPosts.length === 0 ? (
             <p className="book-detail__empty-posts">
               Hələ post yoxdur. Feed-də ilk rəyi sən paylaş.
             </p>
           ) : (
             <div className="book-detail__posts">
-              {relatedPosts.map((post) => (
+              {discussionPosts.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}
             </div>
