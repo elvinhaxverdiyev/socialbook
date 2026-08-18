@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { Camera, ImagePlus, X } from 'lucide-react';
 import Avatar from '../ui/Avatar';
-import { avatarPresets, findAvatarPreset } from '../../data/avatarPresets';
+import { avatarPresets, findAvatarPreset, resolveAvatarPresetUrl } from '../../data/avatarPresets';
 import { DEFAULT_BANNER, bannerPresets } from '../../data/media';
 import { getDisplayUsername } from '../../data/mockData';
 import {
@@ -17,8 +17,9 @@ import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 import useEscapeKey from '../../hooks/useEscapeKey';
 import useFocusTrap from '../../hooks/useFocusTrap';
 
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
-const MAX_BANNER_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_AVATAR_BYTES = MAX_IMAGE_BYTES;
+const MAX_BANNER_BYTES = MAX_IMAGE_BYTES;
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 function readImageFile(file, maxBytes, onSuccess, onError) {
@@ -47,7 +48,7 @@ export default function ProfileEditModal({ user, onSave, onClose }) {
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? '');
   const [bannerUrl, setBannerUrl] = useState(user.bannerUrl ?? DEFAULT_BANNER);
   const [selectedPresetId, setSelectedPresetId] = useState(
-    () => findAvatarPreset(user.avatarUrl)?.id ?? null,
+    () => user.avatarPresetId ?? findAvatarPreset(user.avatarUrl)?.id ?? null,
   );
   const [selectedBannerId, setSelectedBannerId] = useState(
     () => bannerPresets.find((preset) => preset.src === user.bannerUrl)?.id ?? null,
@@ -133,13 +134,36 @@ export default function ProfileEditModal({ user, onSave, onClose }) {
       return;
     }
 
+    let safeAvatarUrl = null;
+
+    if (selectedPresetId) {
+      safeAvatarUrl = resolveAvatarPresetUrl(selectedPresetId);
+      if (!safeAvatarUrl) {
+        setError('Seçilmiş avatar tapılmadı.');
+        return;
+      }
+    } else if (avatarUrl) {
+      safeAvatarUrl = sanitizeImageUrl(avatarUrl);
+      if (!safeAvatarUrl) {
+        setError('Şəkil formatı dəstəklənmir və ya çox böyükdür (max 10 MB).');
+        return;
+      }
+    }
+
+    const safeBannerUrl = sanitizeImageUrl(bannerUrl) ?? DEFAULT_BANNER;
+
+    if (bannerUrl && bannerUrl !== DEFAULT_BANNER && !sanitizeImageUrl(bannerUrl)) {
+      setError('Banner formatı dəstəklənmir və ya çox böyükdür (max 10 MB).');
+      return;
+    }
+
     onSave({
       handle: nextHandle,
       bio: clampText(bio, LIMITS.bio),
-      avatarUrl: sanitizeImageUrl(avatarUrl),
+      avatarUrl: safeAvatarUrl,
       avatarPresetId: selectedPresetId,
-      bannerUrl: sanitizeImageUrl(bannerUrl) ?? DEFAULT_BANNER,
-      initials: avatarUrl
+      bannerUrl: safeBannerUrl,
+      initials: safeAvatarUrl
         ? user.initials
         : sanitizeInitials(cleanUsername.slice(0, 2).toUpperCase() || user.initials),
     });
@@ -224,7 +248,13 @@ export default function ProfileEditModal({ user, onSave, onClose }) {
           </div>
 
           <div className="profile-edit-modal__photo">
-            <Avatar initials={initials} src={avatarUrl} size={80} name={username || 'Profil'} />
+            <Avatar
+              initials={initials}
+              src={avatarUrl}
+              presetId={selectedPresetId}
+              size={80}
+              name={username || 'Profil'}
+            />
             <div className="profile-edit-modal__photo-actions">
               <button
                 type="button"

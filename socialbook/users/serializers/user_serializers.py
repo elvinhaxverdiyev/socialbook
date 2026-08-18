@@ -1,7 +1,22 @@
-from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from rest_framework import serializers
+
+from users.serializers.avatar_serializers import AvatarSerializer
+from users.utils.image_validation import validate_background_upload
 
 User = get_user_model()
+
+
+def _avatar_url(obj, context):
+    avatar = getattr(obj, "profile_avatar", None)
+    if not avatar or not avatar.image:
+        return None
+    request = context.get("request")
+    url = avatar.image.url
+    if request is not None:
+        return request.build_absolute_uri(url)
+    return url
 
 
 # ---------------------------------------------------------
@@ -14,6 +29,8 @@ class UserShortSerializer(serializers.ModelSerializer):
     qısa istifadəçi məlumatı.
     """
 
+    avatar = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -24,6 +41,9 @@ class UserShortSerializer(serializers.ModelSerializer):
             'avatar',
             'current_status',
         ]
+
+    def get_avatar(self, obj):
+        return _avatar_url(obj, self.context)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -36,6 +56,8 @@ class UserSerializer(serializers.ModelSerializer):
     oxuyur (N+1 olmadan); annotasiya yoxdursa modelin adi sorğusuna fallback edir.
     """
 
+    avatar = serializers.SerializerMethodField()
+    profile_avatar = AvatarSerializer(read_only=True)
     following_count = serializers.SerializerMethodField()
     followers_count = serializers.SerializerMethodField()
     posts_count = serializers.SerializerMethodField()
@@ -55,7 +77,7 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'email',
             'avatar',
-            'avatar_preset_id',
+            'profile_avatar',
             'backround_image',
             'bio',
             'age',
@@ -76,6 +98,9 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'is_email_verified', 'created_at', 'updated_at',
         ]
+
+    def get_avatar(self, obj):
+        return _avatar_url(obj, self.context)
 
     def _annotated_or(self, obj, attr, fallback_attr):
         value = getattr(obj, attr, None)
@@ -112,6 +137,10 @@ class UserSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not (request and request.user.is_authenticated):
             return False
+
+        annotated = getattr(obj, '_viewer_blocked_target', None)
+        if annotated is not None:
+            return bool(annotated)
         return request.user.blocked_users.filter(blocked_id=obj.pk).exists()
 
     def get_is_self(self, obj):
@@ -120,6 +149,12 @@ class UserSerializer(serializers.ModelSerializer):
             return obj.pk == request.user.pk
         return False
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if not self.get_is_self(instance):
+            data.pop('email', None)
+        return data
+
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     """
@@ -127,14 +162,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     `ProfileEditModal`/`updateCurrentProfile` ilə uyğun.
     """
 
+    profile_avatar_id = serializers.IntegerField(required=False, write_only=True, min_value=1)
+
     class Meta:
         model = User
         fields = [
             'username',
             'first_name',
             'last_name',
-            'avatar',
-            'avatar_preset_id',
+            'profile_avatar_id',
             'backround_image',
             'bio',
             'age',
@@ -149,3 +185,30 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if qs.exists():
             raise serializers.ValidationError("Bu istifadəçi adı artıq mövcuddur.")
         return value
+
+    def validate_backround_image(self, value):
+        if not value:
+            return value
+        try:
+            validate_background_upload(value)
+        except ValidationError as exc:
+            message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+            raise serializers.ValidationError(message) from exc
+        return value
+
+    def update(self, instance, validated_data):
+        avatar_id = validated_data.pop("profile_avatar_id", None)
+        user = super().update(instance, validated_data)
+
+        if avatar_id is not None:
+            from users.serializers.avatar_serializers import ProfileAvatarSelectSerializer
+
+            select = ProfileAvatarSelectSerializer(
+                data={"profile_avatar_id": avatar_id},
+                context=self.context,
+            )
+            select.is_valid(raise_exception=True)
+            user.profile_avatar_id = avatar_id
+            user.save(update_fields=["profile_avatar", "updated_at"])
+
+        return user

@@ -9,6 +9,7 @@ from socialbook.pagination import DefaultPagination
 from users.models.comment_models import Comment
 from users.models.user_posts import Post
 from users.serializers.comment_serializers import CommentSerializer
+from users.utils.block_utils import raise_if_blocked, raise_if_post_blocked
 
 
 class CommentListCreateAPIView(APIView):
@@ -21,8 +22,8 @@ class CommentListCreateAPIView(APIView):
         return [IsAuthenticated()] if self.request.method == 'POST' else [AllowAny()]
 
     def get(self, request, post_id):
-        get_object_or_404(Post, pk=post_id)
-        comments = Comment.objects.filter(post_id=post_id).for_list(request.user)
+        post = get_object_or_404(Post.objects.for_feed(request.user), pk=post_id)
+        comments = Comment.objects.filter(post_id=post.pk).for_list(request.user)
 
         paginator = DefaultPagination()
         page = paginator.paginate_queryset(comments, request, view=self)
@@ -30,12 +31,27 @@ class CommentListCreateAPIView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request, post_id):
-        post = get_object_or_404(Post, pk=post_id)
+        post = get_object_or_404(Post.objects.for_feed(request.user), pk=post_id)
+        raise_if_post_blocked(request.user, post)
+
         serializer = CommentSerializer(
             data=request.data, context={'request': request, 'post': post},
         )
         serializer.is_valid(raise_exception=True)
         comment = serializer.save()
+
+        author = post.user
+        if author:
+            from users.utils.notifications import create_notification
+
+            create_notification(
+                recipient=author,
+                actor=request.user,
+                notification_type='comment',
+                text=f'{request.user.username} postuna şərh yazdı.',
+                post=post,
+            )
+
         return Response(
             CommentSerializer(comment, context={'request': request}).data,
             status=status.HTTP_201_CREATED,
@@ -65,12 +81,18 @@ class CommentLikeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, post_id, comment_id):
-        comment = get_object_or_404(Comment, pk=comment_id, post_id=post_id)
+        post = get_object_or_404(Post.objects.for_feed(request.user), pk=post_id)
+        comment = get_object_or_404(Comment, pk=comment_id, post_id=post.pk)
+        raise_if_post_blocked(request.user, post)
+        if comment.user_id:
+            raise_if_blocked(request.user, comment.user)
         comment.likes.add(request.user)
         return self._response(request, comment)
 
     def delete(self, request, post_id, comment_id):
-        comment = get_object_or_404(Comment, pk=comment_id, post_id=post_id)
+        post = get_object_or_404(Post.objects.for_feed(request.user), pk=post_id)
+        comment = get_object_or_404(Comment, pk=comment_id, post_id=post.pk)
+        raise_if_post_blocked(request.user, post)
         comment.likes.remove(request.user)
         return self._response(request, comment)
 

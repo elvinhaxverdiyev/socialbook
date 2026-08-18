@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, Plus, Search } from 'lucide-react';
 import BookSpine from '../ui/BookSpine';
+import { sanitizeSearchQuery } from '../../utils/security';
 
 const CUSTOM_BOOK = '__custom__';
 
@@ -17,7 +18,7 @@ export default function BookPicker({ books = [], value, onChange, customLabel = 
   }, [books, value, customLabel]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = sanitizeSearchQuery(query).toLowerCase();
     if (!q) return books;
     return books.filter((book) => {
       const title = String(book.title || '').toLowerCase();
@@ -99,7 +100,7 @@ export default function BookPicker({ books = [], value, onChange, customLabel = 
             <input
               ref={searchRef}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => setQuery(sanitizeSearchQuery(e.target.value))}
               placeholder="Axtar"
               className="book-picker__search-input"
               autoComplete="off"

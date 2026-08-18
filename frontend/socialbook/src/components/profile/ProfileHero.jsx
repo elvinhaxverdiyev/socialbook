@@ -10,6 +10,7 @@ export default function ProfileHero({
   bio,
   initials,
   avatarUrl,
+  avatarPresetId,
   bannerUrl,
   followingCount = 0,
   followersCount = 0,
@@ -45,6 +46,7 @@ export default function ProfileHero({
             <Avatar
               initials={initials}
               src={avatarUrl}
+              presetId={avatarPresetId}
               size={96}
               className="profile-hero__avatar"
               name={username}

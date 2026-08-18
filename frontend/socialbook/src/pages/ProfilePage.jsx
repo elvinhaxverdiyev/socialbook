@@ -34,6 +34,7 @@ export default function ProfilePage() {
         bio={currentUser.bio}
         initials={currentUser.initials}
         avatarUrl={currentUser.avatarUrl}
+        avatarPresetId={currentUser.avatarPresetId}
         bannerUrl={currentUser.bannerUrl}
         followingCount={followingUsers.length}
         followersCount={followerUsers.length}

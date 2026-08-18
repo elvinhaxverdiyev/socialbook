@@ -8,6 +8,8 @@ from rest_framework.views import APIView
 from socialbook.pagination import DefaultPagination
 from users.serializers.user_serializers import UserSerializer
 from users.utils import normalize_username
+from users.utils.block_utils import raise_if_blocked
+from users.utils.notifications import create_notification
 
 User = get_user_model()
 
@@ -24,7 +26,17 @@ class FollowAPIView(APIView):
         if isinstance(target, Response):
             return target
 
-        target.followers.add(request.user)
+        raise_if_blocked(request.user, target)
+
+        if not target.followers.filter(pk=request.user.pk).exists():
+            target.followers.add(request.user)
+            create_notification(
+                recipient=target,
+                actor=request.user,
+                notification_type='follow',
+                text=f'{request.user.username} səni izləməyə başladı.',
+            )
+
         return Response(
             UserSerializer(target, context={'request': request}).data,
             status=status.HTTP_200_OK,

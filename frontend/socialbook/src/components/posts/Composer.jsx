@@ -200,7 +200,13 @@ export default function Composer({ onSubmit }) {
     <section className="composer">
       <div className="composer__inner">
         <div className="composer__photo">
-          <Avatar initials={currentUser.initials} src={currentUser.avatarUrl} size={40} name={currentUser.name} />
+          <Avatar
+            initials={currentUser.initials}
+            src={currentUser.avatarUrl}
+            presetId={currentUser.avatarPresetId}
+            size={40}
+            name={currentUser.name}
+          />
         </div>
 
         <div className="composer__body">

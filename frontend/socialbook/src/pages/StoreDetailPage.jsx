@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import PostCard from '../components/posts/PostCard';
 import EmptyState from '../components/ui/EmptyState';
 import { getStoreById, getStorePosts } from '../data/mockData';
+import { sanitizeHexColor, sanitizeTelHref } from '../utils/security';
 
 export default function StoreDetailPage() {
   const { viewedStoreId, posts, requireAuth } = useApp();
@@ -13,11 +14,14 @@ export default function StoreDetailPage() {
     return <EmptyState text="Mağaza tapılmadı." icon={Store} />;
   }
 
+  const storeTint = sanitizeHexColor(store.cover);
+  const phoneHref = sanitizeTelHref(store.phone);
+
   return (
     <div className="store-detail">
       <header
         className="store-detail__hero"
-        style={{ '--store-tint': store.cover || '#7A2331' }}
+        style={{ '--store-tint': storeTint }}
       >
         <span className="store-detail__icon">
           <Store size={28} />
@@ -79,12 +83,12 @@ export default function StoreDetailPage() {
                 <span className="store-detail__contact-value">{store.location}</span>
               </div>
             </li>
-            {store.phone && (
+            {store.phone && phoneHref && (
               <li className="store-detail__contact-row">
                 <Phone size={16} />
                 <div>
                   <span className="store-detail__contact-label">Telefon</span>
-                  <a className="store-detail__contact-value" href={`tel:${store.phone.replace(/\s/g, '')}`}>
+                  <a className="store-detail__contact-value" href={phoneHref}>
                     {store.phone}
                   </a>
                 </div>

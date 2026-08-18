@@ -1,5 +1,3 @@
-import random
-
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -47,11 +45,15 @@ class MeAPIView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
-        serializer = UserSerializer(request.user, context={'request': request})
+        user = User.objects.select_related("profile_avatar").get(pk=request.user.pk)
+        serializer = UserSerializer(user, context={'request': request})
         return Response(serializer.data)
 
     def patch(self, request):
-        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        user = User.objects.select_related("profile_avatar").get(pk=request.user.pk)
+        serializer = UserUpdateSerializer(
+            user, data=request.data, partial=True, context={"request": request},
+        )
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(
@@ -113,19 +115,23 @@ class UserSuggestionsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        limit = min(int(request.query_params.get('limit', 3) or 3), 20)
+        try:
+            limit = int(request.query_params.get('limit', 3) or 3)
+        except (TypeError, ValueError):
+            limit = 3
+        limit = max(1, min(limit, 20))
 
         excluded_ids = {request.user.pk}
         excluded_ids.update(request.user.following.values_list('pk', flat=True))
         excluded_ids.update(request.user.blocked_users.values_list('blocked_id', flat=True))
         excluded_ids.update(request.user.blocked_by.values_list('blocker_id', flat=True))
 
-        pool = list(
+        sample = list(
             User.objects.filter(is_active=True)
             .exclude(pk__in=excluded_ids)
             .for_list(request.user)
+            .order_by('?')[:limit]
         )
-        sample = random.sample(pool, min(limit, len(pool)))
 
         serializer = UserSerializer(sample, many=True, context={'request': request})
         return Response(serializer.data)

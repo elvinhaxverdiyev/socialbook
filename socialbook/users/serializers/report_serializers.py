@@ -18,8 +18,28 @@ class ReportSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, attrs):
-        if not attrs.get('reported_user') and not attrs.get('reported_post'):
+        reporter = self.context['request'].user
+        reported_user = attrs.get('reported_user')
+        reported_post = attrs.get('reported_post')
+
+        if not reported_user and not reported_post:
             raise serializers.ValidationError("Şikayət ediləcək istifadəçi və ya post tələb olunur.")
+
+        if reported_user and reported_user.pk == reporter.pk:
+            raise serializers.ValidationError("Özünü şikayət edə bilməzsən.")
+
+        if reported_user and Report.objects.filter(
+            reporter=reporter,
+            reported_user=reported_user,
+        ).exists():
+            raise serializers.ValidationError("Bu istifadəçi artıq şikayət edilib.")
+
+        if reported_post and Report.objects.filter(
+            reporter=reporter,
+            reported_post=reported_post,
+        ).exists():
+            raise serializers.ValidationError("Bu post artıq şikayət edilib.")
+
         return attrs
 
     def validate_reason(self, value):

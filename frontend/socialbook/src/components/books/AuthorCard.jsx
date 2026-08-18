@@ -1,8 +1,10 @@
 import { ChevronRight } from 'lucide-react';
 import { getAuthorBookCount } from '../../data/books';
+import { sanitizeHexColor } from '../../utils/security';
 
 export default function AuthorCard({ author, onClick, compact = false }) {
   const bookCount = getAuthorBookCount(author.id);
+  const authorTint = sanitizeHexColor(author.cover);
 
   return (
     <button
@@ -10,7 +12,7 @@ export default function AuthorCard({ author, onClick, compact = false }) {
       className={`author-card ${compact ? 'author-card--compact' : ''}`}
       onClick={() => onClick?.(author)}
     >
-      <span className="author-card__avatar" style={{ background: author.cover }}>
+      <span className="author-card__avatar" style={{ background: authorTint }}>
         {author.name.charAt(0)}
       </span>
       <div className="author-card__body">

@@ -25,6 +25,7 @@ import {
   sanitizeShelfTheme,
   saveShelfThemeToStorage,
 } from '../data/shelfTheme';
+import { resolveAvatarPresetUrl } from '../data/avatarPresets';
 import { DEFAULT_BANNER } from '../data/media';
 import {
   ALLOWED_CONDITIONS,
@@ -51,6 +52,7 @@ const AppContext = createContext(null);
 const COLOR_MODE_KEY = 'kitabci-color-mode';
 const LEGACY_COLOR_MODE_KEY = 'ref-color-mode';
 const AUTH_KEY = 'kitabci-auth';
+const PROFILE_STORAGE_KEY = 'kitabci-profile';
 const SUGGESTION_SLOTS = 3;
 const AUTH_PAGES = new Set(['profile', 'notifications', 'saved']);
 
@@ -140,7 +142,64 @@ function getInitialLoggedIn() {
   try {
     return localStorage.getItem(AUTH_KEY) !== 'out';
   } catch {
-    return true;
+    return false;
+  }
+}
+
+const PROFILE_STORAGE_MAX_BYTES = 500_000;
+const UNSAFE_STORAGE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function isSafeStorageObject(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+  return !Object.keys(data).some((key) => UNSAFE_STORAGE_KEYS.has(key));
+}
+
+function loadStoredProfile(fallback) {
+  try {
+    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+    if (!raw || raw.length > PROFILE_STORAGE_MAX_BYTES) return fallback;
+
+    const data = JSON.parse(raw);
+    if (!isSafeStorageObject(data)) return fallback;
+
+    const handle = isValidHandle(data.handle) ? data.handle : fallback.handle;
+    const avatarPresetId = typeof data.avatarPresetId === 'string' ? data.avatarPresetId : null;
+    const presetAvatarUrl = resolveAvatarPresetUrl(avatarPresetId);
+
+    return {
+      ...fallback,
+      handle,
+      name: getDisplayUsername(handle),
+      bio: clampText(data.bio ?? fallback.bio, LIMITS.bio),
+      avatarUrl: presetAvatarUrl ?? sanitizeImageUrl(data.avatarUrl) ?? fallback.avatarUrl ?? null,
+      avatarPresetId,
+      bannerUrl: sanitizeImageUrl(data.bannerUrl) ?? fallback.bannerUrl ?? DEFAULT_BANNER,
+      initials: sanitizeInitials(data.initials ?? fallback.initials),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function saveStoredProfile(profile) {
+  try {
+    const avatarUrl = profile.avatarPresetId
+      ? resolveAvatarPresetUrl(profile.avatarPresetId)
+      : profile.avatarUrl;
+
+    localStorage.setItem(
+      PROFILE_STORAGE_KEY,
+      JSON.stringify({
+        handle: profile.handle,
+        bio: profile.bio,
+        avatarUrl,
+        avatarPresetId: profile.avatarPresetId,
+        bannerUrl: profile.bannerUrl,
+        initials: profile.initials,
+      }),
+    );
+  } catch {
+    // localStorage dolu ola bilər
   }
 }
 
@@ -167,7 +226,7 @@ export function AppProvider({ children }) {
       new Set(initialBlockedUsers.map((user) => user.handle)),
     ),
   );
-  const [accountUser, setAccountUser] = useState(initialCurrentUser);
+  const [accountUser, setAccountUser] = useState(() => loadStoredProfile(initialCurrentUser));
   const [savedIds, setSavedIds] = useState(new Set([3]));
   const [likedCommentKeys, setLikedCommentKeys] = useState(new Set());
   const [blockedUsers, setBlockedUsers] = useState(initialBlockedUsers);
@@ -269,14 +328,17 @@ export function AppProvider({ children }) {
   const goBack = () => {
     setNavStack((prev) => {
       if (prev.length === 0) {
-        if (navSnapshotRef.current?.activePage !== 'home') {
-          resetToHome();
-        }
+        queueMicrotask(() => {
+          if (navSnapshotRef.current?.activePage !== 'home') {
+            resetToHome();
+          }
+        });
         return prev;
       }
+
       const next = [...prev];
       const snap = next.pop();
-      applyNavSnapshot(snap);
+      queueMicrotask(() => applyNavSnapshot(snap));
       return next;
     });
   };
@@ -470,78 +532,78 @@ export function AppProvider({ children }) {
     if (!requireAuth('İzləmək üçün daxil ol və ya qeydiyyatdan keç.')) return;
     if (blockedHandles.has(handle)) return;
 
+    const wasFollowing = following.has(handle);
+
     setFollowing((prev) => {
-      const wasFollowing = prev.has(handle);
-
-      setFollowingUsers((users) => {
-        if (wasFollowing) {
-          return users.filter((u) => u.handle !== handle);
-        }
-        if (users.some((u) => u.handle === handle) || !user) return users;
-        return [
-          ...users,
-          {
-            id: user.id ?? user.handle,
-            name: user.name,
-            handle: user.handle,
-            initials: user.initials,
-            avatarUrl: user.avatarUrl,
-          },
-        ];
-      });
-
       const next = new Set(prev);
       if (wasFollowing) next.delete(handle);
       else next.add(handle);
       return next;
     });
+
+    setFollowingUsers((users) => {
+      if (wasFollowing) {
+        return users.filter((u) => u.handle !== handle);
+      }
+      if (users.some((u) => u.handle === handle) || !user) return users;
+      return [
+        ...users,
+        {
+          id: user.id ?? user.handle,
+          name: user.name,
+          handle: user.handle,
+          initials: user.initials,
+          avatarUrl: user.avatarUrl,
+        },
+      ];
+    });
   };
 
   const followSuggestion = (handle, user, slotIndex) => {
     if (!requireAuth('İzləmək üçün daxil ol və ya qeydiyyatdan keç.')) return;
+    if (following.has(handle)) return;
 
     setFollowing((prev) => {
-      if (prev.has(handle)) return prev;
-
-      setFollowingUsers((users) => {
-        if (users.some((u) => u.handle === handle)) return users;
-        return [
-          ...users,
-          {
-            id: user.id ?? user.handle,
-            name: user.name,
-            handle: user.handle,
-            initials: user.initials,
-            avatarUrl: user.avatarUrl,
-          },
-        ];
-      });
-
       const next = new Set(prev);
       next.add(handle);
-
-      setVisibleSuggestions((suggestions) => {
-        const updated = [...suggestions];
-        const otherHandles = updated
-          .filter((_, index) => index !== slotIndex)
-          .map((person) => person.handle);
-        const replacement = pickRandomSuggestion(
-          [handle, ...otherHandles],
-          next,
-          accountUser.handle,
-          blockedHandles,
-        );
-
-        if (replacement) {
-          updated[slotIndex] = replacement;
-          return updated;
-        }
-
-        updated.splice(slotIndex, 1);
-        return updated;
-      });
-
       return next;
+    });
+
+    setFollowingUsers((users) => {
+      if (users.some((u) => u.handle === handle)) return users;
+      return [
+        ...users,
+        {
+          id: user.id ?? user.handle,
+          name: user.name,
+          handle: user.handle,
+          initials: user.initials,
+          avatarUrl: user.avatarUrl,
+        },
+      ];
+    });
+
+    setVisibleSuggestions((suggestions) => {
+      const updated = [...suggestions];
+      const otherHandles = updated
+        .filter((_, index) => index !== slotIndex)
+        .map((person) => person.handle);
+      const nextFollowing = new Set(following);
+      nextFollowing.add(handle);
+      const replacement = pickRandomSuggestion(
+        [handle, ...otherHandles],
+        nextFollowing,
+        accountUser.handle,
+        blockedHandles,
+      );
+
+      if (replacement) {
+        updated[slotIndex] = replacement;
+        return updated;
+      }
+
+      updated.splice(slotIndex, 1);
+      return updated;
     });
   };
 
@@ -632,32 +694,31 @@ export function AppProvider({ children }) {
     if (!requireAuth('Şərhi bəyənmək üçün daxil ol və ya qeydiyyatdan keç.')) return;
 
     const key = `${postId}:${commentId}`;
+    const wasLiked = likedCommentKeys.has(key);
 
     setLikedCommentKeys((prev) => {
-      const wasLiked = prev.has(key);
       const next = new Set(prev);
       if (wasLiked) next.delete(key);
       else next.add(key);
-
-      setPosts((posts) =>
-        posts.map((post) => {
-          if (post.id !== postId) return post;
-          return {
-            ...post,
-            comments: post.comments.map((comment) => {
-              if (comment.id !== commentId) return comment;
-              const current = Number(comment.likes) || 0;
-              return {
-                ...comment,
-                likes: Math.max(0, current + (wasLiked ? -1 : 1)),
-              };
-            }),
-          };
-        }),
-      );
-
       return next;
     });
+
+    setPosts((posts) =>
+      posts.map((post) => {
+        if (post.id !== postId) return post;
+        return {
+          ...post,
+          comments: post.comments.map((comment) => {
+            if (comment.id !== commentId) return comment;
+            const current = Number(comment.likes) || 0;
+            return {
+              ...comment,
+              likes: Math.max(0, current + (wasLiked ? -1 : 1)),
+            };
+          }),
+        };
+      }),
+    );
   };
 
   const isCommentLiked = (postId, commentId) => likedCommentKeys.has(`${postId}:${commentId}`);
@@ -971,26 +1032,38 @@ export function AppProvider({ children }) {
     const handle = isValidHandle(updates.handle) ? updates.handle : oldHandle;
     const displayName = getDisplayUsername(handle);
     const bio = clampText(updates.bio ?? accountUser.bio, LIMITS.bio);
-    const avatarUrl =
-      updates.avatarUrl != null
-        ? sanitizeImageUrl(updates.avatarUrl)
-        : accountUser.avatarUrl;
+    const avatarPresetId = updates.avatarPresetId ?? null;
+    let avatarUrl = null;
+
+    if (avatarPresetId) {
+      avatarUrl = resolveAvatarPresetUrl(avatarPresetId);
+    } else if (updates.avatarUrl) {
+      avatarUrl = sanitizeImageUrl(updates.avatarUrl);
+      if (!avatarUrl) return;
+    }
+
     const bannerUrl =
       updates.bannerUrl != null
         ? sanitizeImageUrl(updates.bannerUrl) ?? DEFAULT_BANNER
         : accountUser.bannerUrl;
     const initials = sanitizeInitials(updates.initials ?? accountUser.initials);
 
-    setAccountUser((prev) => ({
-      ...prev,
+    const nextProfile = {
       handle,
       bio,
       avatarUrl,
-      avatarPresetId: updates.avatarPresetId ?? null,
+      avatarPresetId,
       bannerUrl,
       initials,
       name: displayName,
+    };
+
+    setAccountUser((prev) => ({
+      ...prev,
+      ...nextProfile,
     }));
+
+    saveStoredProfile(nextProfile);
 
     setPosts((prev) =>
       prev.map((post) =>

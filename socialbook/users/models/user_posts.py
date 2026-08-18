@@ -48,11 +48,12 @@ class PostQuerySet(models.QuerySet):
         """
         if not viewer or not getattr(viewer, 'is_authenticated', False):
             return self
-        from users.models.block_models import BlockedUser
 
-        blocked_ids = BlockedUser.objects.filter(blocker=viewer).values_list('blocked_id', flat=True)
-        blocked_by_ids = BlockedUser.objects.filter(blocked=viewer).values_list('blocker_id', flat=True)
-        return self.exclude(user_id__in=list(blocked_ids) + list(blocked_by_ids))
+        from users.utils.block_utils import blocked_user_exists_subquery
+
+        return self.exclude(
+            models.Q(user_id__isnull=False) & blocked_user_exists_subquery(viewer),
+        )
 
     def for_feed(self, viewer=None):
         return self.with_related().with_counts().with_viewer_flags(viewer).visible_to(viewer)
