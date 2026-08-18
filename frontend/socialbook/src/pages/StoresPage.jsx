@@ -1,6 +1,7 @@
 import { MapPin, Star, BadgeCheck, Clock, Store, ChevronRight } from 'lucide-react';
 import { stores } from '../data/mockData';
 import { useApp } from '../context/AppContext';
+import { sanitizeHexColor } from '../utils/security';
 
 export default function StoresPage() {
   const { openStore } = useApp();
@@ -24,7 +25,7 @@ export default function StoresPage() {
           >
             <span
               className="store-card__icon"
-              style={{ background: store.cover || 'var(--accent)' }}
+              style={{ background: sanitizeHexColor(store.cover) }}
             >
               <Store size={20} color="var(--paper-raised)" />
             </span>

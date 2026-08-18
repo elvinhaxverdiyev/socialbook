@@ -36,3 +36,8 @@ export function findAvatarPreset(src) {
   if (!src) return null;
   return avatarPresets.find((preset) => preset.src === src) ?? null;
 }
+
+export function resolveAvatarPresetUrl(presetId) {
+  if (!presetId) return null;
+  return avatarPresets.find((preset) => preset.id === presetId)?.src ?? null;
+}

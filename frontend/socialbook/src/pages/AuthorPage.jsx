@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import BooksGrid from '../components/books/BooksGrid';
 import EmptyState from '../components/ui/EmptyState';
 import { getAuthorById, getBooksByAuthor } from '../data/books';
+import { sanitizeHexColor } from '../utils/security';
 
 export default function AuthorPage() {
   const { viewedAuthorId, openBook, openBooks } = useApp();
@@ -23,13 +24,15 @@ export default function AuthorPage() {
     );
   }
 
+  const authorTint = sanitizeHexColor(author.cover);
+
   return (
     <div className="author-page">
       <header
         className="author-page__hero"
-        style={{ '--author-tint': author.cover }}
+        style={{ '--author-tint': authorTint }}
       >
-        <span className="author-page__avatar" style={{ background: author.cover }} aria-hidden="true">
+        <span className="author-page__avatar" style={{ background: authorTint }} aria-hidden="true">
           {author.name.charAt(0)}
         </span>
         <div className="author-page__intro">

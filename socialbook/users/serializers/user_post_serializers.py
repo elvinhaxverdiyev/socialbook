@@ -132,6 +132,29 @@ class PostSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'store_id': "Mağaza postu üçün mağaza tələb olunur."}
                 )
+            if store_id:
+                from stores.models.store_models import Store
+
+                request = self.context.get('request')
+                try:
+                    store = Store.objects.get(pk=store_id)
+                except Store.DoesNotExist as exc:
+                    raise serializers.ValidationError(
+                        {'store_id': "Mağaza tapılmadı."},
+                    ) from exc
+
+                if not store.owner_id:
+                    raise serializers.ValidationError(
+                        {'store_id': "Bu mağaza üçün post yaradıla bilmir."},
+                    )
+                if not request or not request.user.is_authenticated:
+                    raise serializers.ValidationError(
+                        {'store_id': "Mağaza postu üçün daxil olmalısınız."},
+                    )
+                if store.owner_id != request.user.pk:
+                    raise serializers.ValidationError(
+                        {'store_id': "Bu mağaza üçün post yarada bilməzsən."},
+                    )
         else:
             attrs.pop('store_id', None)
 
@@ -148,6 +171,7 @@ class PostSerializer(serializers.ModelSerializer):
             from stores.models.store_models import Store
 
             validated_data['store'] = Store.objects.get(pk=store_id)
+            validated_data['user'] = None
         else:
             validated_data['user'] = request.user
 

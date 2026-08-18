@@ -1,17 +1,17 @@
-import uuid
-
 from django.contrib.auth.models import AbstractUser, UserManager as DjangoUserManager
 from django.db import models
+from django.db.models import Exists, OuterRef
 from django.utils import timezone
 
 from users.shelf_theme import default_shelf_theme
 from users.utils.choices import CURRENT_STATUS_CHOICES, GENDER_CHOICES
 
 
-
 def user_avatar_path(instance, filename):
-    ext = filename.split('.')[-1]
-    return f'avatars/{instance.id}/{uuid.uuid4()}.{ext}'
+    """Köhnə migration-lar üçün saxlanılır (artıq istifadə olunmur)."""
+    import uuid
+    ext = filename.split(".")[-1]
+    return f"avatars/{instance.id}/{uuid.uuid4()}.{ext}"
 
 
 class UserQuerySet(models.QuerySet):
@@ -32,16 +32,26 @@ class UserQuerySet(models.QuerySet):
     def with_viewer_flags(self, viewer):
         if not viewer or not getattr(viewer, 'is_authenticated', False):
             return self
-        return self.prefetch_related(
+        qs = self.prefetch_related(
             models.Prefetch(
                 'followers',
                 queryset=self.model.objects.filter(pk=viewer.pk),
                 to_attr='_viewer_follow_match',
             ),
         )
+        from users.models.block_models import BlockedUser
+
+        return qs.annotate(
+            _viewer_blocked_target=Exists(
+                BlockedUser.objects.filter(
+                    blocker=viewer,
+                    blocked_id=OuterRef('pk'),
+                ),
+            ),
+        )
 
     def for_list(self, viewer=None):
-        return self.with_counts().with_viewer_flags(viewer)
+        return self.with_counts().with_viewer_flags(viewer).select_related("profile_avatar")
 
 
 class UserManager(DjangoUserManager.from_queryset(UserQuerySet)):
@@ -55,12 +65,13 @@ class User(AbstractUser):
     Seçim siyahıları `users/utils/choices.py`-dadır.
     """
 
-    avatar = models.ImageField(
-        upload_to=user_avatar_path,
-        blank=True,
+    profile_avatar = models.ForeignKey(
+        "users.Avatar",
+        on_delete=models.SET_NULL,
+        related_name="selected_by_users",
         null=True,
+        blank=True,
     )
-    avatar_preset_id = models.CharField(max_length=40, blank=True)
     backround_image = models.ImageField(
         upload_to='backgrounds/',
         blank=True,

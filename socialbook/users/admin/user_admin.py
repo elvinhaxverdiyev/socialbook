@@ -36,7 +36,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {"fields": ("username", "email", "password")}),
         (_("Şəxsi məlumatlar"), {
-            "fields": ("first_name", "last_name", "avatar", "avatar_preview", "bio")
+            "fields": ("first_name", "last_name", "profile_avatar", "avatar_preview", "bio")
         }),
         (_("Status"), {
             "fields": (
@@ -64,10 +64,11 @@ class UserAdmin(BaseUserAdmin):
     filter_horizontal = ("groups", "user_permissions")
 
     def avatar_preview(self, obj):
-        if obj.avatar:
+        avatar = obj.profile_avatar
+        if avatar and avatar.image:
             return format_html(
                 '<img src="{}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />',
-                obj.avatar.url,
+                avatar.image.url,
             )
         return "-"
 

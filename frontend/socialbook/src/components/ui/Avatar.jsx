@@ -1,8 +1,11 @@
 import { sanitizeImageUrl, sanitizeInitials } from '../../utils/security';
+import { findAvatarPreset, resolveAvatarPresetUrl } from '../../data/avatarPresets';
 
-export default function Avatar({ initials, src, size = 40, className = '', alt, name }) {
+export default function Avatar({ initials, src, presetId, size = 40, className = '', alt, name }) {
   const safeInitials = sanitizeInitials(initials);
-  const safeSrc = sanitizeImageUrl(src);
+  const presetSrc = resolveAvatarPresetUrl(presetId);
+  const knownPresetSrc = !presetSrc && src ? findAvatarPreset(src)?.src : null;
+  const safeSrc = presetSrc ?? knownPresetSrc ?? sanitizeImageUrl(src);
   const label = alt ?? (name ? `${name} avatarı` : undefined);
 
   if (safeSrc) {

@@ -73,6 +73,7 @@ export default function BookShelf({
     getShelfTheme,
     updateShelfTheme,
     isLoggedIn,
+    requireAuth,
   } = useApp();
 
   const themeHandle = readOnly ? ownerHandle : currentUser.handle;
@@ -107,6 +108,7 @@ export default function BookShelf({
   }, []);
 
   const openAddForm = (status) => {
+    if (!requireAuth('Kitab əlavə etmək üçün daxil ol və ya qeydiyyatdan keç.')) return;
     setForm({
       title: '',
       author: '',
@@ -209,19 +211,6 @@ export default function BookShelf({
             <Palette size={14} />
             Rəfi bəzə
           </button>
-          <button
-            type="button"
-            className="btn btn--primary btn--sm"
-            onClick={() => openAddForm('reading')}
-          >
-            <Plus size={14} />
-            Kitab əlavə et
-          </button>
-        </div>
-      )}
-
-      {embedded && !readOnly && !isLoggedIn && (
-        <div className="book-shelf__embedded-actions">
           <button
             type="button"
             className="btn btn--primary btn--sm"

@@ -22,6 +22,12 @@ class ReportUserAPIView(APIView):
         clean = normalize_username(username)
         target = get_object_or_404(User, username__iexact=clean)
 
+        if target.pk == request.user.pk:
+            return Response(
+                {"error": "Özünü şikayət edə bilməzsən."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = ReportSerializer(
             data={**request.data, 'reported_user': target.pk},
             context={'request': request},

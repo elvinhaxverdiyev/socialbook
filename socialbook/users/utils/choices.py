@@ -34,3 +34,14 @@ NOTIFICATION_TYPE_CHOICES = [
     ('store_post', 'Mağaza paylaşımı'),
     ('system', 'Sistem'),
 ]
+
+MAX_AVATAR_BYTES = 10 * 1024 * 1024
+MAX_BACKGROUND_BYTES = 10 * 1024 * 1024
+
+ALLOWED_AVATAR_CONTENT_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+}
+
+ALLOWED_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}

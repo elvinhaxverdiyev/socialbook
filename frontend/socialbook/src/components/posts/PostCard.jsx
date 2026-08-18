@@ -134,7 +134,7 @@ export default function PostCard({ post }) {
               <p className="post-card__book-title font-display">{post.book.title}</p>
               <p className="post-card__book-author">{post.book.author}</p>
 
-              {(post.type === 'review' || post.type === 'finished') && post.rating > 0 && (
+              {post.type === 'finished' && post.rating > 0 && (
                 <RatingStars rating={post.rating} />
               )}
 

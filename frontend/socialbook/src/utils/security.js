@@ -15,11 +15,15 @@ export const LIMITS = {
 const HEX_COLOR = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const DEFAULT_COLOR = '#7A1F2B';
 
-const ALLOWED_IMAGE_MIMES = new Set([
+const ALLOWED_USER_IMAGE_MIMES = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
   'image/gif',
+]);
+
+const ALLOWED_IMAGE_MIMES = new Set([
+  ...ALLOWED_USER_IMAGE_MIMES,
   'image/svg+xml',
 ]);
 
@@ -110,7 +114,14 @@ export function isValidUsername(value) {
   return /^[a-z0-9_][a-z0-9_.]{2,29}$/.test(clean);
 }
 
-export function sanitizeImageUrl(value) {
+// Profil şəkli/banner üçün base64 limiti (~10 MB fayl)
+const PROFILE_DATA_URL_MAX = 15_000_000;
+
+function isLocalDevHost(hostname) {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+}
+
+export function sanitizeImageUrl(value, { maxDataUrlLength = PROFILE_DATA_URL_MAX, allowSvg = false } = {}) {
   if (typeof value !== 'string') return null;
   const url = value.trim();
   if (!url) return null;
@@ -123,19 +134,30 @@ export function sanitizeImageUrl(value) {
     const semi = url.indexOf(';');
     if (semi === -1) return null;
     const mime = url.slice(5, semi).toLowerCase();
-    if (!ALLOWED_IMAGE_MIMES.has(mime)) return null;
-    return url.length <= 600_000 ? url : null;
+    const allowed = allowSvg ? ALLOWED_IMAGE_MIMES : ALLOWED_USER_IMAGE_MIMES;
+    if (!allowed.has(mime)) return null;
+    return url.length <= maxDataUrlLength ? url : null;
+  }
+
+  if (url.startsWith('blob:')) {
+    return url.length <= 2048 ? url : null;
   }
 
   try {
     const parsed = new URL(url);
     if (parsed.protocol === 'https:') return parsed.href;
-    if (parsed.protocol === 'http:' && parsed.hostname === 'localhost') return parsed.href;
+    if (parsed.protocol === 'http:' && isLocalDevHost(parsed.hostname)) return parsed.href;
   } catch {
     return null;
   }
 
   return null;
+}
+
+export function sanitizeTelHref(phone) {
+  const digits = String(phone ?? '').replace(/[^\d+]/g, '');
+  if (!digits || digits.length > 20 || !/^\+?\d+$/.test(digits)) return null;
+  return `tel:${digits}`;
 }
 
 export function sanitizeDocumentTitle(value, maxLength = 80) {

@@ -8,6 +8,8 @@ from rest_framework.views import APIView
 from socialbook.pagination import DefaultPagination
 from users.models.user_posts import Post
 from users.serializers.user_post_serializers import PostSerializer
+from users.utils.block_utils import raise_if_post_blocked
+from users.utils.notifications import create_notification
 
 
 class PostListCreateAPIView(APIView):
@@ -95,12 +97,25 @@ class PostLikeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, post_id):
-        post = get_object_or_404(Post, pk=post_id)
-        post.likes.add(request.user)
+        post = get_object_or_404(Post.objects.for_feed(request.user), pk=post_id)
+        raise_if_post_blocked(request.user, post)
+
+        if not post.likes.filter(pk=request.user.pk).exists():
+            post.likes.add(request.user)
+            if post.user_id:
+                create_notification(
+                    recipient=post.user,
+                    actor=request.user,
+                    notification_type='like',
+                    text=f'{request.user.username} postunu bəyəndi.',
+                    post=post,
+                )
+
         return self._response(request, post)
 
     def delete(self, request, post_id):
-        post = get_object_or_404(Post, pk=post_id)
+        post = get_object_or_404(Post.objects.for_feed(request.user), pk=post_id)
+        raise_if_post_blocked(request.user, post)
         post.likes.remove(request.user)
         return self._response(request, post)
 
@@ -117,7 +132,8 @@ class PostSaveAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, post_id):
-        post = get_object_or_404(Post, pk=post_id)
+        post = get_object_or_404(Post.objects.for_feed(request.user), pk=post_id)
+        raise_if_post_blocked(request.user, post)
         if post.user_id == request.user.pk:
             return Response(
                 {"error": "Öz postunu yadda saxlaya bilməzsən."}, status=status.HTTP_400_BAD_REQUEST,
@@ -126,7 +142,8 @@ class PostSaveAPIView(APIView):
         return self._response(request, post)
 
     def delete(self, request, post_id):
-        post = get_object_or_404(Post, pk=post_id)
+        post = get_object_or_404(Post.objects.for_feed(request.user), pk=post_id)
+        raise_if_post_blocked(request.user, post)
         post.saved_by.remove(request.user)
         return self._response(request, post)
 
