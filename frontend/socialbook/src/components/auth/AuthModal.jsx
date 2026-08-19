@@ -3,7 +3,8 @@ import { X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { isValidEmail, isValidPassword, isValidUsername, LIMITS, sanitizeUsername } from '../../utils/security';
 import LegalModal from '../ui/LegalModal';
-import { termsContent, privacyContent } from '../../data/mockData';
+import { privacyContent } from '../../data/mockData';
+import { termsContent } from '../../data/legal';
 import { genderOptions } from '../../data/constants';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 import useEscapeKey from '../../hooks/useEscapeKey';
@@ -276,8 +277,7 @@ export default function AuthModal() {
 
       {legalModal === 'terms' && (
         <LegalModal
-          title={termsContent.title}
-          sections={termsContent.sections}
+          content={termsContent}
           onClose={() => setLegalModal(null)}
         />
       )}
