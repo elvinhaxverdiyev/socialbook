@@ -26,6 +26,7 @@ import {
   saveShelfThemeToStorage,
 } from '../data/shelfTheme';
 import { resolveAvatarPresetUrl } from '../data/avatarPresets';
+import { SETTINGS_SECTIONS } from '../data/constants';
 import { DEFAULT_BANNER } from '../data/media';
 import {
   ALLOWED_CONDITIONS,
@@ -236,6 +237,7 @@ export function AppProvider({ children }) {
   const [colorMode, setColorMode] = useState(getInitialColorMode);
   const [isLoggedIn, setIsLoggedIn] = useState(getInitialLoggedIn);
   const [authModal, setAuthModal] = useState({ open: false, mode: 'login', reason: '' });
+  const [settingsSection, setSettingsSection] = useState('main');
   const [navStack, setNavStack] = useState([]);
   const skipNavPush = useRef(false);
   const navSnapshotRef = useRef(null);
@@ -810,7 +812,7 @@ export function AppProvider({ children }) {
     ]);
   };
 
-  const setActivePageSafe = (page) => {
+  const setActivePageSafe = (page, options = {}) => {
     if (!isAllowedPage(page)) return;
     if (AUTH_PAGES.has(page) && !isLoggedIn) {
       openAuthModal('login', 'Bu bölmə üçün daxil ol və ya qeydiyyatdan keç.');
@@ -834,8 +836,21 @@ export function AppProvider({ children }) {
     if (page !== 'author') setViewedAuthorId(null);
     if (page !== 'store') setViewedStoreId(null);
     if (page !== 'books' && page !== 'genres') setBooksGenreFilter(null);
+    if (page === 'settings') {
+      if (!options.keepSettingsSection) setSettingsSection('main');
+    } else {
+      setSettingsSection('main');
+    }
     setViewedPostId(null);
     setActivePage(page);
+  };
+
+  const openSettings = (section = 'main') => {
+    const next = SETTINGS_SECTIONS.has(section) ? section : 'main';
+    setSettingsSection(next);
+    if (activePage !== 'settings') {
+      setActivePageSafe('settings', { keepSettingsSection: true });
+    }
   };
 
   const openUserProfile = (handle) => {
@@ -1156,6 +1171,8 @@ export function AppProvider({ children }) {
     openAuthModal,
     closeAuthModal,
     requireAuth,
+    settingsSection,
+    openSettings,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

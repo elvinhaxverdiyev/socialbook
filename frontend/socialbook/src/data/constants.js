@@ -20,6 +20,14 @@ export const navItems = [
   { key: 'settings', label: 'Parametrlər', icon: Settings },
 ];
 
+export const SETTINGS_SECTIONS = new Set(['main', 'blocked', 'about', 'terms', 'community']);
+
+export const legalNavItems = [
+  { key: 'about', label: 'Haqqımızda' },
+  { key: 'terms', label: 'İstifadə şərtləri' },
+  { key: 'community', label: 'Topluluq qaydaları' },
+];
+
 export const composerTypes = [
   { value: 'general', label: 'Adi post' },
   { value: 'reading', label: 'Oxuyuram' },

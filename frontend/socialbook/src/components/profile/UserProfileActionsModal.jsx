@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react';
 import { ArrowLeft, Ban, Flag, X } from 'lucide-react';
 import Avatar from '../ui/Avatar';
+import LegalModal from '../ui/LegalModal';
 import { getDisplayUsername } from '../../data/mockData';
+import { communityRulesContent } from '../../data/legal';
 import { clampText, LIMITS } from '../../utils/security';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 import useEscapeKey from '../../hooks/useEscapeKey';
@@ -17,11 +19,18 @@ export default function UserProfileActionsModal({
   const [step, setStep] = useState('menu');
   const [reportText, setReportText] = useState('');
   const [error, setError] = useState('');
+  const [legalModal, setLegalModal] = useState(null);
 
-  const handleClose = useCallback(() => onClose?.(), [onClose]);
-  const cardRef = useFocusTrap(true);
+  const handleClose = useCallback(() => {
+    if (legalModal) {
+      setLegalModal(null);
+      return;
+    }
+    onClose?.();
+  }, [onClose, legalModal]);
+  const cardRef = useFocusTrap(!legalModal);
   useBodyScrollLock(true);
-  useEscapeKey(handleClose, true);
+  useEscapeKey(handleClose, !legalModal);
 
   const username = getDisplayUsername(user.handle);
 
@@ -137,7 +146,16 @@ export default function UserProfileActionsModal({
           {step === 'report' && (
             <div className="user-actions-modal__panel">
               <p className="user-actions-modal__text">
-                Bu istifadəçi haqqında nə baş verdiyini qısaca yazın. Komandamız yoxlayacaq.
+                Bu istifadəçi haqqında nə baş verdiyini qısaca yazın. Komandamız
+                {' '}
+                <button
+                  type="button"
+                  className="user-actions-modal__inline-link"
+                  onClick={() => setLegalModal('community')}
+                >
+                  topluluq qaydalarına
+                </button>
+                {' '}əsasən yoxlayacaq.
               </p>
               <textarea
                 value={reportText}
@@ -173,6 +191,12 @@ export default function UserProfileActionsModal({
           )}
         </div>
       </div>
+      {legalModal === 'community' && (
+        <LegalModal
+          content={communityRulesContent}
+          onClose={() => setLegalModal(null)}
+        />
+      )}
     </div>
   );
 }

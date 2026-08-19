@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X, BookOpen, UserRound } from 'lucide-react';
-import { navItems } from '../../data/constants';
+import { navItems, legalNavItems } from '../../data/constants';
 import { searchBooks, searchAuthors } from '../../data/books';
 import { useApp } from '../../context/AppContext';
 import { LIMITS, sanitizeHexColor } from '../../utils/security';
@@ -20,6 +20,7 @@ export default function Sidebar({ open = false, onClose }) {
     shelfView,
     currentUser,
     isLoggedIn,
+    openSettings,
   } = useApp();
   const [searchOpen, setSearchOpen] = useState(false);
   const searchInputRef = useRef(null);
@@ -146,6 +147,22 @@ export default function Sidebar({ open = false, onClose }) {
               </button>
             );
           })}
+        </nav>
+
+        <nav className="sidebar__legal" aria-label="Platforma sənədləri">
+          {legalNavItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className="sidebar__legal-link"
+              onClick={() => {
+                openSettings(item.key);
+                onClose?.();
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
         </nav>
       </aside>
 

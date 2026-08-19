@@ -423,35 +423,4 @@ export const initialBlockedUsers = [
   { id: 2, name: 'Elvin Test', handle: '@elvin_test', initials: 'ET' },
 ];
 
-export const aboutContent = {
-  title: 'Haqqımızda',
-  paragraphs: [
-    'Kitabci.com — kitabsevərlər, oxucular və mağazalar üçün sosial platformadır. Burada kitab haqqında fikir paylaşa, oxuma irəliləyişini qeyd edə, eləcə də kitab ala və sata bilərsən.',
-    'Missiyamız oxumağı bir icma təcrübəsinə çevirməkdir. Gələcəkdə mağazalar və istifadəçilər birbaşa platforma üzərindən əlaqə saxlayacaq.',
-    'Hazırda layihə inkişaf mərhələsindədir. Təklif və iradlərinizi gözləyirik.',
-  ],
-};
-
-export { termsContent, communityRulesContent } from './legal';
-
-export const privacyContent = {
-  title: 'Məxfilik siyasəti',
-  sections: [
-    {
-      heading: '1. Hansı məlumatlar toplanır',
-      text: 'Qeydiyyat zamanı email, istifadəçi adı və profil məlumatlarınız saxlanılır. Post, şərh və satış elanları da hesabınıza bağlanır.',
-    },
-    {
-      heading: '2. Məlumatların istifadəsi',
-      text: 'Məlumatlar yalnız xidmətin göstərilməsi, təhlükəsizlik və platformanın inkişafı məqsədilə emal olunur.',
-    },
-    {
-      heading: '3. Üçüncü tərəflərlə paylaşım',
-      text: 'Şəxsi məlumatlarınız reklam məqsədilə satılmır. Qanuni tələb olduqda və ya xidmət təminatçıları ilə məhdud şəkildə paylaşıla bilər.',
-    },
-    {
-      heading: '4. Sizin hüquqlarınız',
-      text: 'Məlumatlarınıza baxmaq, düzəltmək və silinməsini tələb etmək hüququnuz var. Sorğularınızı parametrlər bölməsindən göndərə bilərsiniz.',
-    },
-  ],
-};
+export { aboutContent, termsContent, communityRulesContent } from './legal';

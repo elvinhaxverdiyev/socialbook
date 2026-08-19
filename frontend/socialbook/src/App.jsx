@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
+import SiteFooter from './components/layout/SiteFooter';
 import RightPanel from './components/layout/RightPanel';
 import AuthModal from './components/auth/AuthModal';
 import PostDetailModal from './components/posts/PostDetailModal';
@@ -143,6 +144,8 @@ function AppShell() {
           <div className="right-panel right-panel--spacer" aria-hidden="true" />
         )}
       </div>
+
+      <SiteFooter />
 
       <AuthModal />
       <PostDetailModal />
