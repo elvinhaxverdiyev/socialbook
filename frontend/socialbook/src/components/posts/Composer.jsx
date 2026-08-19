@@ -6,6 +6,8 @@ import { composerTypes } from '../../data/constants';
 import { bookCatalog, findBookByTitle, genres } from '../../data/books';
 import { useApp } from '../../context/AppContext';
 import { LIMITS, parsePositivePrice } from '../../utils/security';
+import LegalModal from '../ui/LegalModal';
+import { communityRulesContent } from '../../data/legal';
 
 const coverColors = ['#7A2331', '#435A45', '#B08D3D', '#22304F'];
 const TEXTAREA_MIN = 72;
@@ -24,6 +26,7 @@ export default function Composer({ onSubmit }) {
   const [price, setPrice] = useState('');
   const [condition, setCondition] = useState('yaxşı');
   const [rating, setRating] = useState(0);
+  const [showRules, setShowRules] = useState(false);
 
   const needsBook = type === 'reading' || type === 'finished' || type === 'sale';
   const isCustomBook = bookId === CUSTOM_BOOK;
@@ -349,12 +352,27 @@ export default function Composer({ onSubmit }) {
           )}
 
           <div className="composer__footer">
+            {expanded && (
+              <button
+                type="button"
+                className="composer__legal"
+                onClick={() => setShowRules(true)}
+              >
+                Topluluq qaydaları
+              </button>
+            )}
             <button type="button" className="btn btn--primary" onClick={submit}>
               Paylaş
             </button>
           </div>
         </div>
       </div>
+      {showRules && (
+        <LegalModal
+          content={communityRulesContent}
+          onClose={() => setShowRules(false)}
+        />
+      )}
     </section>
   );
 }

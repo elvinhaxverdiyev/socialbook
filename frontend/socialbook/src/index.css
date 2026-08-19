@@ -331,6 +331,44 @@ a {
   min-width: 0;
 }
 
+.site-footer {
+  width: 100%;
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding: 16px 24px 24px;
+}
+
+.site-footer__nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.site-footer__link {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.site-footer__link:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-footer__copy {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
 /* Sidebar */
 
 .sidebar {
@@ -401,6 +439,30 @@ a {
   border-radius: 10px;
   background: var(--accent);
   color: var(--paper-raised);
+}
+
+.sidebar__legal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.sidebar__legal-link {
+  padding: 6px 10px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.sidebar__legal-link:hover {
+  color: var(--ink);
+  background: var(--paper);
 }
 
 .sidebar__link--active .sidebar__badge,
@@ -1370,8 +1432,25 @@ a {
 
 .composer__footer {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 12px;
   margin-top: 10px;
+}
+
+.composer__legal {
+  margin-right: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.composer__legal:hover {
+  color: var(--ink);
+  text-decoration: underline;
 }
 
 /* Post card */
@@ -3423,6 +3502,17 @@ button.profile-hero__stat:hover {
   color: var(--ink-soft);
 }
 
+.user-actions-modal__inline-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .user-actions-modal__textarea {
   resize: vertical;
   min-height: 96px;
@@ -4032,6 +4122,10 @@ button.settings-list__item:hover {
   }
 
   .app__body {
+    padding: 16px;
+  }
+
+  .site-footer {
     padding: 16px;
   }
 }

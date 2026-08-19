@@ -3,8 +3,7 @@ import { X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { isValidEmail, isValidPassword, isValidUsername, LIMITS, sanitizeUsername } from '../../utils/security';
 import LegalModal from '../ui/LegalModal';
-import { privacyContent } from '../../data/mockData';
-import { termsContent } from '../../data/legal';
+import { termsContent, communityRulesContent } from '../../data/legal';
 import { genderOptions } from '../../data/constants';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 import useEscapeKey from '../../hooks/useEscapeKey';
@@ -81,7 +80,7 @@ export default function AuthModal() {
         return;
       }
       if (!acceptedTerms) {
-        setError('Qeydiyyat üçün istifadə şərtləri və məxfilik siyasətini qəbul etməlisiniz.');
+        setError('Qeydiyyat üçün istifadə şərtləri və topluluq qaydalarını qəbul etməlisiniz.');
         return;
       }
 
@@ -219,19 +218,19 @@ export default function AuthModal() {
                   className="welcome__consent-link"
                   onClick={() => setLegalModal('terms')}
                 >
-                  İstifadə şərtləri
+                  İstifadə şərtlərini
                 </button>
                 {' '}və{' '}
                 <button
                   type="button"
                   className="welcome__consent-link"
-                  onClick={() => setLegalModal('privacy')}
+                  onClick={() => setLegalModal('community')}
                 >
-                  Məxfilik siyasəti
+                  topluluq qaydalarını
                 </button>
                 {' '}
                 <label htmlFor="auth-register-consent" className="welcome__consent-label">
-                  ni oxudum, qəbul edirəm.
+                  oxudum, qəbul edirəm.
                 </label>
               </span>
             </div>
@@ -282,10 +281,9 @@ export default function AuthModal() {
         />
       )}
 
-      {legalModal === 'privacy' && (
+      {legalModal === 'community' && (
         <LegalModal
-          title={privacyContent.title}
-          sections={privacyContent.sections}
+          content={communityRulesContent}
           onClose={() => setLegalModal(null)}
         />
       )}

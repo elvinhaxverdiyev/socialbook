@@ -1,3 +1,13 @@
+export const aboutContent = {
+  title: 'Haqqımızda',
+  intro: [
+    'Kitabci.com — kitabsevərlər, oxucular və mağazalar üçün sosial platformadır. Burada kitab haqqında fikir paylaşa, oxuma irəliləyişini qeyd edə, eləcə də kitab ala və sata bilərsən.',
+    'Missiyamız oxumağı bir icma təcrübəsinə çevirməkdir. Gələcəkdə mağazalar və istifadəçilər birbaşa platforma üzərindən əlaqə saxlayacaq.',
+    'Hazırda layihə inkişaf mərhələsindədir. Təklif və iradlərinizi gözləyirik.',
+  ],
+  sections: [],
+};
+
 export const termsContent = {
   title: 'İstifadə şərtləri',
   documentTitle: 'Kitabci.com — İstifadə Şərtləri',

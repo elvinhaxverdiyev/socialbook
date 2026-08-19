@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Ban,
   Info,
@@ -15,8 +14,8 @@ import Avatar from '../components/ui/Avatar';
 import EmptyState from '../components/ui/EmptyState';
 import { LegalDocument } from '../components/ui/LegalModal';
 import { useApp } from '../context/AppContext';
-import { aboutContent } from '../data/mockData';
-import { termsContent, communityRulesContent } from '../data/legal';
+import { aboutContent, termsContent, communityRulesContent } from '../data/legal';
+import { SETTINGS_SECTIONS } from '../data/constants';
 
 export default function SettingsPage() {
   const {
@@ -27,9 +26,11 @@ export default function SettingsPage() {
     logout,
     isLoggedIn,
     openAuthModal,
+    settingsSection,
+    openSettings,
   } = useApp();
 
-  const [view, setView] = useState('main');
+  const view = SETTINGS_SECTIONS.has(settingsSection) ? settingsSection : 'main';
 
   const handleLogout = () => {
     if (window.confirm('Hesabdan çıxmaq istədiyinizə əminsiniz? Qonaq kimi baxmağa davam edəcəksiniz.')) {
@@ -39,7 +40,7 @@ export default function SettingsPage() {
 
   if (view === 'blocked') {
     return (
-      <SettingsPanel title="Blokladıqlarım" onBack={() => setView('main')}>
+      <SettingsPanel title="Blokladıqlarım" onBack={() => openSettings('main')}>
         {blockedUsers.length === 0 ? (
           <EmptyState text="Blokladığınız istifadəçi yoxdur." icon={Ban} />
         ) : (
@@ -68,11 +69,9 @@ export default function SettingsPage() {
 
   if (view === 'about') {
     return (
-      <SettingsPanel title={aboutContent.title} onBack={() => setView('main')}>
+      <SettingsPanel title={aboutContent.title} onBack={() => openSettings('main')}>
         <div className="settings-text">
-          {aboutContent.paragraphs.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
+          <LegalDocument content={aboutContent} />
         </div>
       </SettingsPanel>
     );
@@ -81,7 +80,7 @@ export default function SettingsPage() {
   if (view === 'terms' || view === 'community') {
     const content = view === 'terms' ? termsContent : communityRulesContent;
     return (
-      <SettingsPanel title={content.title} onBack={() => setView('main')}>
+      <SettingsPanel title={content.title} onBack={() => openSettings('main')}>
         <div className="settings-text">
           <LegalDocument content={content} />
         </div>
@@ -93,13 +92,13 @@ export default function SettingsPage() {
     <>
       <section className="page-intro">
         <h1 className="page-intro__title font-display">Parametrlər</h1>
-        <p className="page-intro__text">Görünüş, bloklar və hesab seçimləri.</p>
+        <p className="page-intro__text">Görünüş, bloklar, hesab və platforma qaydaları.</p>
       </section>
 
       <div className="settings-card">
         <ul className="settings-list">
           <li>
-            <button type="button" className="settings-list__item" onClick={() => setView('blocked')}>
+            <button type="button" className="settings-list__item" onClick={() => openSettings('blocked')}>
               <Ban size={18} />
               <span className="settings-list__label">Blokladıqlarım</span>
               <ChevronRight size={16} className="settings-list__arrow" />
@@ -107,7 +106,7 @@ export default function SettingsPage() {
           </li>
 
           <li>
-            <button type="button" className="settings-list__item" onClick={() => setView('about')}>
+            <button type="button" className="settings-list__item" onClick={() => openSettings('about')}>
               <Info size={18} />
               <span className="settings-list__label">Haqqımızda</span>
               <ChevronRight size={16} className="settings-list__arrow" />
@@ -115,7 +114,7 @@ export default function SettingsPage() {
           </li>
 
           <li>
-            <button type="button" className="settings-list__item" onClick={() => setView('terms')}>
+            <button type="button" className="settings-list__item" onClick={() => openSettings('terms')}>
               <FileText size={18} />
               <span className="settings-list__label">İstifadə şərtləri</span>
               <ChevronRight size={16} className="settings-list__arrow" />
@@ -123,7 +122,7 @@ export default function SettingsPage() {
           </li>
 
           <li>
-            <button type="button" className="settings-list__item" onClick={() => setView('community')}>
+            <button type="button" className="settings-list__item" onClick={() => openSettings('community')}>
               <Users size={18} />
               <span className="settings-list__label">Topluluq qaydaları</span>
               <ChevronRight size={16} className="settings-list__arrow" />

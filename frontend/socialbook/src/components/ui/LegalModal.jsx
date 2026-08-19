@@ -15,7 +15,7 @@ export function LegalDocument({ content }) {
         <p key={paragraph}>{paragraph}</p>
       ))}
 
-      {content.sections.map((section) => (
+      {(content.sections || []).map((section) => (
         <section key={section.heading} className="legal-document__section">
           <h3>{section.heading}</h3>
           {section.text && <p>{section.text}</p>}
