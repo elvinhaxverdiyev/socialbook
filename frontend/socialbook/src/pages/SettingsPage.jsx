@@ -3,6 +3,7 @@ import {
   Ban,
   Info,
   FileText,
+  Users,
   LogOut,
   LogIn,
   Moon,
@@ -12,8 +13,10 @@ import {
 } from 'lucide-react';
 import Avatar from '../components/ui/Avatar';
 import EmptyState from '../components/ui/EmptyState';
+import { LegalDocument } from '../components/ui/LegalModal';
 import { useApp } from '../context/AppContext';
-import { aboutContent, termsContent } from '../data/mockData';
+import { aboutContent } from '../data/mockData';
+import { termsContent, communityRulesContent } from '../data/legal';
 
 export default function SettingsPage() {
   const {
@@ -75,16 +78,12 @@ export default function SettingsPage() {
     );
   }
 
-  if (view === 'terms') {
+  if (view === 'terms' || view === 'community') {
+    const content = view === 'terms' ? termsContent : communityRulesContent;
     return (
-      <SettingsPanel title={termsContent.title} onBack={() => setView('main')}>
+      <SettingsPanel title={content.title} onBack={() => setView('main')}>
         <div className="settings-text">
-          {termsContent.sections.map((section) => (
-            <section key={section.heading}>
-              <h3>{section.heading}</h3>
-              <p>{section.text}</p>
-            </section>
-          ))}
+          <LegalDocument content={content} />
         </div>
       </SettingsPanel>
     );
@@ -119,6 +118,14 @@ export default function SettingsPage() {
             <button type="button" className="settings-list__item" onClick={() => setView('terms')}>
               <FileText size={18} />
               <span className="settings-list__label">İstifadə şərtləri</span>
+              <ChevronRight size={16} className="settings-list__arrow" />
+            </button>
+          </li>
+
+          <li>
+            <button type="button" className="settings-list__item" onClick={() => setView('community')}>
+              <Users size={18} />
+              <span className="settings-list__label">Topluluq qaydaları</span>
               <ChevronRight size={16} className="settings-list__arrow" />
             </button>
           </li>

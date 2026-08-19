@@ -432,27 +432,7 @@ export const aboutContent = {
   ],
 };
 
-export const termsContent = {
-  title: 'İstifadə şərtləri',
-  sections: [
-    {
-      heading: '1. Ümumi qaydalar',
-      text: 'Kitabci.com platformasından istifadə edərkən Azərbaycan Respublikasının qanunvericiliyinə və ictimai davranış normalarına riayət etməlisiniz.',
-    },
-    {
-      heading: '2. Məzmun',
-      text: 'Paylaşdığınız postlar, şərhlər və satış elanları sizin məsuliyyətinizdir. Təhqiredici, saxta və qanunsuz məzmun qadağandır.',
-    },
-    {
-      heading: '3. Satış elanları',
-      text: 'İstifadəçi və mağaza elanlarında göstərilən məlumatların düzgünlüyünə görə paylaşan tərəf məsuliyyət daşıyır.',
-    },
-    {
-      heading: '4. Hesab',
-      text: 'Hesab məlumatlarınızın təhlükəsizliyinə görə siz məsuliyyət daşıyırsınız. Parolunuzu heç kimlə paylaşmayın.',
-    },
-  ],
-};
+export { termsContent, communityRulesContent } from './legal';
 
 export const privacyContent = {
   title: 'Məxfilik siyasəti',
