@@ -125,7 +125,7 @@ function AppShell() {
       <div className="app__body">
         <Sidebar open={sidebarOpen} onClose={closeSidebar} />
 
-        <div className={`app__main ${WIDE_PAGES.has(pageKey) ? 'app__main--wide' : ''}`}>
+        <div className="app__main">
           <main id="main-content" className="app__feed" tabIndex={-1}>
             {canGoBack && (
               <div className="app__back-bar">

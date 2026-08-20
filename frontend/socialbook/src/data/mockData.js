@@ -195,36 +195,6 @@ export function getStorePosts(posts, storeId) {
   );
 }
 
-export {
-  bookCatalog,
-  trendingBooks,
-  genres,
-  bookTypes,
-  authors,
-  getBookById,
-  getAuthorById,
-  getBooksByGenre,
-  getBooksByAuthor,
-  getBooksByType,
-  findBookByTitle,
-  searchBooks,
-  searchAuthors,
-  getRelatedPosts,
-  getStorePostsForBook,
-  getSecondHandPostsForBook,
-  getDiscussionPostsForBook,
-  sortBooks,
-  getGenreById,
-  getGenreBookCount,
-  getAuthorBookCount,
-} from './books';
-
-export const suggestedPeople = [
-  { name: 'Nərmin Əliyeva', handle: '@narmin.reads', initials: 'NƏ', booksSold: 12 },
-  { name: 'Tural Hüseynov', handle: '@tural_h', initials: 'TH', booksSold: 5 },
-  { name: 'Kamran Vəliyev', handle: '@kamranv', initials: 'KV', booksSold: 8 },
-];
-
 export const suggestionPool = [
   { name: 'Nərmin Əliyeva', handle: '@narmin.reads', initials: 'NƏ', booksSold: 12 },
   { name: 'Tural Hüseynov', handle: '@tural_h', initials: 'TH', booksSold: 5 },
@@ -402,9 +372,6 @@ export const initialNotifications = [
   { id: 4, text: 'Tural səni izləməyə başladı', time: 'dünən', read: true },
 ];
 
-/** @deprecated use initialNotifications / context state */
-export const notifications = initialNotifications;
-
 export const formatPrice = (amount) => `${Number(amount).toFixed(2)} ₼`;
 
 export function getDisplayUsername(handle) {
@@ -422,5 +389,3 @@ export const initialBlockedUsers = [
   { id: 1, name: 'Spam Hesab', handle: '@spam_bot', initials: 'SH' },
   { id: 2, name: 'Elvin Test', handle: '@elvin_test', initials: 'ET' },
 ];
-
-export { aboutContent, termsContent, communityRulesContent } from './legal';

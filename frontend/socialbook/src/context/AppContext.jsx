@@ -871,10 +871,6 @@ export function AppProvider({ children }) {
     setActivePage('user-profile');
   };
 
-  const closeUserProfile = () => {
-    goBack();
-  };
-
   const openShelfPage = ({ handle = null, filter = 'all' } = {}) => {
     const nextFilter = ALLOWED_SHELF_STATUSES.has(filter) || filter === 'all' ? filter : 'all';
     const owner = handle && isValidHandle(handle) ? handle : null;
@@ -883,10 +879,6 @@ export function AppProvider({ children }) {
     pushNav();
     setShelfView({ handle: owner, filter: nextFilter });
     setActivePage('shelf');
-  };
-
-  const closeShelfPage = () => {
-    goBack();
   };
 
   const openBook = (bookId) => {
@@ -899,10 +891,6 @@ export function AppProvider({ children }) {
     setActivePage('book');
   };
 
-  const closeBook = () => {
-    goBack();
-  };
-
   const openAuthor = (authorId) => {
     if (!authorId) return;
     pushNav();
@@ -910,10 +898,6 @@ export function AppProvider({ children }) {
     setViewedAuthorId(authorId);
     setViewedStoreId(null);
     setActivePage('author');
-  };
-
-  const closeAuthor = () => {
-    goBack();
   };
 
   const openStore = (storeId) => {
@@ -924,10 +908,6 @@ export function AppProvider({ children }) {
     setViewedBookId(null);
     setViewedAuthorId(null);
     setActivePage('store');
-  };
-
-  const closeStore = () => {
-    goBack();
   };
 
   const openBooks = ({ genre = null } = {}) => {
@@ -1107,20 +1087,15 @@ export function AppProvider({ children }) {
     canGoBack,
     viewedUserHandle,
     openUserProfile,
-    closeUserProfile,
     shelfView,
     openShelfPage,
-    closeShelfPage,
     viewedBookId,
     viewedAuthorId,
     viewedStoreId,
     booksGenreFilter,
     openBook,
-    closeBook,
     openAuthor,
-    closeAuthor,
     openStore,
-    closeStore,
     openBooks,
     openGenres,
     viewedPostId,
