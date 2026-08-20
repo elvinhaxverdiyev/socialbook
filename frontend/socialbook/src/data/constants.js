@@ -8,7 +8,7 @@ import {
   Settings,
 } from 'lucide-react';
 
-export { genres, bookTypes } from './books';
+export { bookTypes } from './books';
 
 export const navItems = [
   { key: 'home', label: 'Əsas səhifə', icon: Home },

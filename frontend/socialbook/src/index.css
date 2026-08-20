@@ -307,23 +307,19 @@ a {
   display: flex;
   flex: 1;
   gap: 24px;
-  max-width: 1180px;
+  max-width: none;
   width: 100%;
-  margin: 0 auto;
-  padding: 20px 24px 32px;
+  margin: 0;
+  padding: 20px 12px 32px;
   align-items: flex-start;
 }
 
 .app__main {
   flex: 1 1 0;
   min-width: 0;
-  max-width: 680px;
+  max-width: none;
   position: relative;
   z-index: 0;
-}
-
-.app__main--wide {
-  max-width: 920px;
 }
 
 .app__feed {
@@ -372,7 +368,7 @@ a {
 /* Sidebar */
 
 .sidebar {
-  width: 200px;
+  width: 240px;
   flex-shrink: 0;
   position: sticky;
   top: 72px;
@@ -387,21 +383,6 @@ a {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.sidebar__auth {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 8px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-}
-
-.sidebar__auth-btn {
-  width: 100%;
-  justify-content: center;
-  border-radius: 10px;
 }
 
 .sidebar__link {
@@ -492,15 +473,30 @@ a {
 }
 
 .header__inner {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) 300px;
+  column-gap: 24px;
+  align-items: center;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 12px;
+}
+
+.header__end {
+  grid-column: 3;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 12px 24px;
+  width: auto;
+  min-width: 0;
+  margin: 0;
 }
 
 .header__logo {
+  grid-column: 1;
+  justify-self: start;
   flex-shrink: 0;
   font-size: var(--text-2xl);
   font-weight: 400;
@@ -508,6 +504,7 @@ a {
   color: var(--accent);
   padding: 4px 0;
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 .header__logo-dot {
@@ -579,37 +576,6 @@ a {
   gap: 10px;
   flex-shrink: 0;
   margin-left: auto;
-}
-
-.header__profile {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px 6px 6px;
-  border-radius: 20px;
-  border: 1px solid var(--line);
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-
-.header__profile:hover {
-  background: rgba(0, 0, 0, 0.03);
-}
-
-.header__profile--active {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.header__guest {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink-soft);
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .header__login {
@@ -745,7 +711,7 @@ a {
 /* Right panel */
 
 .right-panel {
-  width: 260px;
+  width: 300px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -4068,57 +4034,26 @@ button.settings-list__item:hover {
   opacity: 0.9;
 }
 
-.logout-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 20px;
-}
-
-.logout-overlay__card {
-  background: var(--paper-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 28px 24px;
-  max-width: 360px;
-  width: 100%;
-  text-align: center;
-  box-shadow: var(--shadow);
-}
-
-.logout-overlay__card h2 {
-  font-size: 20px;
-  margin-bottom: 10px;
-}
-
-.logout-overlay__card p {
-  font-size: 13px;
-  color: var(--ink-soft);
-  line-height: 1.6;
-  margin-bottom: 20px;
-}
-
-.settings-card__note {
-  font-size: 12px;
-  color: var(--ink-soft);
-  line-height: 1.6;
-  padding: 12px;
-}
-
-.settings-card__hint {
-  margin-top: 8px;
-  font-style: italic;
-}
-
 /* Responsive */
 
 @media (max-width: 960px) {
   .right-panel {
     display: none;
+  }
+
+  .header__end {
+    grid-column: auto;
+    width: auto;
+    margin-left: auto;
+  }
+
+  .header__logo {
+    grid-column: auto;
+    margin-right: auto;
+  }
+
+  .header__inner {
+    display: flex;
   }
 
   .app__body {
@@ -4178,10 +4113,6 @@ button.settings-list__item:hover {
     transform: translateX(0);
   }
 
-  .sidebar__auth {
-    margin-top: auto;
-  }
-
   .sidebar__mobile-head {
     display: flex;
     align-items: center;
@@ -4235,15 +4166,7 @@ button.settings-list__item:hover {
     gap: 10px;
   }
 
-  .header__profile span {
-    display: none;
-  }
-
   .header__login span {
-    display: none;
-  }
-
-  .header__guest {
     display: none;
   }
 

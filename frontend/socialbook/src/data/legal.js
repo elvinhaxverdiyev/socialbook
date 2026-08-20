@@ -10,7 +10,6 @@ export const aboutContent = {
 
 export const termsContent = {
   title: 'İstifadə şərtləri',
-  documentTitle: 'Kitabci.com — İstifadə Şərtləri',
   updatedAt: '19 Avqust 2026',
   intro: [
     'Kitabci.com-a xoş gəlmisiniz. Kitabci.com kitabsevərlərin kitab kəşf edə, paylaşa, müzakirə edə, digər istifadəçiləri izləyə və mağazalardan kitab əldə edə bildiyi sosial platformadır.',
@@ -167,7 +166,6 @@ export const termsContent = {
 
 export const communityRulesContent = {
   title: 'Topluluq qaydaları',
-  documentTitle: 'Kitabci.com — Topluluq Qaydaları',
   updatedAt: '19 Avqust 2026',
   intro: [
     'Kitabci.com kitab sevən insanların tanış olduğu, fikir və rəylərini paylaşdığı, kitab kəşf etdiyi və mağazalardan kitab əldə etdiyi bir platformadır. Məqsədimiz hər kəs üçün hörmətli, təhlükəsiz və faydalı bir icma yaratmaqdır.',

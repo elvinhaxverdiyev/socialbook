@@ -681,10 +681,6 @@ export function getBooksByAuthor(authorId) {
   return bookCatalog.filter((b) => b.authorId === authorId);
 }
 
-export function getBooksByType(typeId) {
-  return bookCatalog.filter((b) => b.type === typeId);
-}
-
 export function findBookByTitle(title) {
   if (!title) return null;
   const normalized = title.trim().toLowerCase();
