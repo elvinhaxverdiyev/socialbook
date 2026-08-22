@@ -1,4 +1,4 @@
-import { Bell, Check, CheckCheck, Trash2 } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2 } from '../icons';
 import EmptyState from '../components/ui/EmptyState';
 import { useApp } from '../context/AppContext';
 

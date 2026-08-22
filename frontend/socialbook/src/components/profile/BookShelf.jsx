@@ -9,7 +9,7 @@ import {
   BookOpen,
   ArrowRight,
   Palette,
-} from 'lucide-react';
+} from '../../icons';
 import { shelfStatuses } from '../../data/constants';
 import { findBookByTitle } from '../../data/books';
 import { getShelfSectionTheme, shelfThemeToCssVars } from '../../data/shelfTheme';

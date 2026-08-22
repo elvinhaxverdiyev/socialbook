@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Palette, RotateCcw, X } from 'lucide-react';
+import { Palette, RotateCcw, X } from '../../icons';
 import {
   DEFAULT_SHELF_SECTION_THEME,
   SHELF_PLANK_PRESETS,

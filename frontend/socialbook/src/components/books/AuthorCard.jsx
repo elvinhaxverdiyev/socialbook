@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '../../icons';
 import { getAuthorBookCount } from '../../data/books';
 import { sanitizeHexColor } from '../../utils/security';
 

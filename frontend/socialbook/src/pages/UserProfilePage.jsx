@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
-import { User } from 'lucide-react';
+import { User } from '../icons';
 import PostCard from '../components/posts/PostCard';
 import EmptyState from '../components/ui/EmptyState';
 import BookShelf from '../components/profile/BookShelf';
+import SuggestedPeople from '../components/profile/SuggestedPeople';
 import UserListModal from '../components/profile/UserListModal';
 import UserProfileActionsModal from '../components/profile/UserProfileActionsModal';
 import ProfileHero from '../components/profile/ProfileHero';
 import { useApp } from '../context/AppContext';
-import { getUserProfile, getDisplayUsername } from '../data/mockData';
+import { getUserProfile, getDisplayUsername, suggestionPool } from '../data/mockData';
 
 export default function UserProfilePage() {
   const {
@@ -20,6 +21,7 @@ export default function UserProfilePage() {
     isBlockedHandle,
     blockUser,
     reportUser,
+    currentUser,
   } = useApp();
   const [openList, setOpenList] = useState(null);
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -40,6 +42,30 @@ export default function UserProfilePage() {
     () => profile?.followersList.filter((user) => !isBlockedHandle(user.handle)) ?? [],
     [profile, isBlockedHandle],
   );
+
+  const suggestedPeople = useMemo(() => {
+    if (!profile) return [];
+
+    const excluded = new Set([profile.handle, currentUser.handle, ...following]);
+    const seen = new Set();
+    const picked = [];
+
+    const tryAdd = (user) => {
+      if (!user?.handle || excluded.has(user.handle) || seen.has(user.handle)) return;
+      if (isBlockedHandle(user.handle)) return;
+      seen.add(user.handle);
+      picked.push(user);
+    };
+
+    [...visibleFollowers, ...visibleFollowing].forEach(tryAdd);
+
+    for (const person of suggestionPool) {
+      if (picked.length >= 5) break;
+      tryAdd(person);
+    }
+
+    return picked.slice(0, 5);
+  }, [profile, visibleFollowing, visibleFollowers, following, currentUser.handle, isBlockedHandle]);
 
   if (!profile || isBlockedHandle(viewedUserHandle)) {
     return (
@@ -84,6 +110,11 @@ export default function UserProfilePage() {
       />
 
       <BookShelf books={profile.shelfBooks} readOnly ownerHandle={profile.handle} />
+
+      <SuggestedPeople
+        users={suggestedPeople}
+        subtitle="Oxucular və yazarlar"
+      />
 
       <section className="profile-feed">
         <div className="profile-feed__head">

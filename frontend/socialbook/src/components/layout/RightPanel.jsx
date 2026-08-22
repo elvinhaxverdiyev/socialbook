@@ -1,4 +1,4 @@
-import { TrendingUp, Store, Users, UserPlus } from 'lucide-react';
+import { TrendingUp, Store, Users, UserPlus } from '../../icons';
 import Avatar from '../ui/Avatar';
 import BookSpine from '../ui/BookSpine';
 import { trendingBooks } from '../../data/books';

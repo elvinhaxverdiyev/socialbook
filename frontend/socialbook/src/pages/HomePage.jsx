@@ -3,7 +3,7 @@ import Composer from '../components/posts/Composer';
 import AdPanel from '../components/posts/AdPanel';
 import EmptyState from '../components/ui/EmptyState';
 import { useApp } from '../context/AppContext';
-import { BookOpen, Search } from 'lucide-react';
+import { BookOpen, Search } from '../icons';
 
 export default function HomePage() {
   const { homeFeed, addPost, isLoggedIn, query, setQuery } = useApp();

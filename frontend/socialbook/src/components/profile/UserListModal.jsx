@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { X } from 'lucide-react';
+import { X } from '../../icons';
 import Avatar from '../ui/Avatar';
 import { useApp } from '../../context/AppContext';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';

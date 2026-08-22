@@ -2,7 +2,7 @@ import Modal from '../ui/Modal';
 import PostCard from './PostCard';
 import EmptyState from '../ui/EmptyState';
 import { useApp } from '../../context/AppContext';
-import { FileText } from 'lucide-react';
+import { FileText } from '../../icons';
 
 export default function PostDetailModal() {
   const { posts, viewedPostId, closePost } = useApp();

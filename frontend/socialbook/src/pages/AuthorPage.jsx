@@ -1,4 +1,4 @@
-import { UserRound } from 'lucide-react';
+import { UserRound } from '../icons';
 import { useApp } from '../context/AppContext';
 import BooksGrid from '../components/books/BooksGrid';
 import EmptyState from '../components/ui/EmptyState';

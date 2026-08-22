@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react';
+import { Star } from '../../icons';
 
 export default function RatingStars({ rating = 0, size = 14, interactive = false, onChange, label }) {
   const rounded = Math.round(Number(rating) || 0);

@@ -9,7 +9,7 @@ import {
   BadgeCheck,
   ArrowRight,
   Store,
-} from 'lucide-react';
+} from '../icons';
 import { useApp } from '../context/AppContext';
 import BooksGrid from '../components/books/BooksGrid';
 import GenreChip from '../components/books/GenreChip';

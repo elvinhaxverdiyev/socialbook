@@ -9,7 +9,7 @@ import {
   Sun,
   ChevronRight,
   ArrowLeft,
-} from 'lucide-react';
+} from '../icons';
 import Avatar from '../components/ui/Avatar';
 import EmptyState from '../components/ui/EmptyState';
 import { LegalDocument } from '../components/ui/LegalModal';

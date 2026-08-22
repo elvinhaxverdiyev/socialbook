@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, Plus, Search } from 'lucide-react';
+import { Check, ChevronDown, Plus, Search } from '../../icons';
 import BookSpine from '../ui/BookSpine';
 import { sanitizeSearchQuery } from '../../utils/security';
 

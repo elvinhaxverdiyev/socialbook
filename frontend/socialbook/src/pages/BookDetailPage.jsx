@@ -9,7 +9,7 @@ import {
   MapPin,
   BadgeCheck,
   ArrowRight,
-} from 'lucide-react';
+} from '../icons';
 import { useApp } from '../context/AppContext';
 import BookSpine from '../components/ui/BookSpine';
 import RatingStars from '../components/ui/RatingStars';

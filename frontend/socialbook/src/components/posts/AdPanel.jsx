@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react';
+import { Star } from '../../icons';
 
 export default function AdPanel() {
   return (

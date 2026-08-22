@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Camera, ImagePlus, X } from 'lucide-react';
+import { Camera, ImagePlus, X } from '../../icons';
 import Avatar from '../ui/Avatar';
 import { avatarPresets, findAvatarPreset, resolveAvatarPresetUrl } from '../../data/avatarPresets';
 import { DEFAULT_BANNER, bannerPresets } from '../../data/media';

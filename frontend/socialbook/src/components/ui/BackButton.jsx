@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from '../../icons';
 import { useApp } from '../../context/AppContext';
 
 export default function BackButton({ className = '', label = 'Geri' }) {
