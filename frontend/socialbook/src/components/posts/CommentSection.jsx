@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Send } from 'lucide-react';
+import { Heart, MessageCircle, Send } from '../../icons';
 import { useState } from 'react';
 import Avatar from '../ui/Avatar';
 import { LIMITS, clampText } from '../../utils/security';
@@ -32,7 +32,9 @@ export default function CommentSection({ post, open, onToggle }) {
         aria-expanded={open}
         aria-label={`Şərhlər (${post.comments.length})`}
       >
-        <MessageCircle size={18} strokeWidth={1.7} aria-hidden="true" />
+        <span className="post-action__icon" aria-hidden="true">
+          <MessageCircle size={16} fill={open ? 'currentColor' : 'none'} />
+        </span>
         <span>{post.comments.length}</span>
       </button>
 
@@ -67,8 +69,7 @@ export default function CommentSection({ post, open, onToggle }) {
                       >
                         <Heart
                           size={13}
-                          fill={liked ? 'var(--accent)' : 'none'}
-                          strokeWidth={1.8}
+                          fill={liked ? 'currentColor' : 'none'}
                         />
                         <span>{likes}</span>
                       </button>

@@ -1,4 +1,4 @@
-import { MapPin, Star, BadgeCheck, Clock, Phone, Store, BookOpen } from 'lucide-react';
+import { MapPin, Star, BadgeCheck, Clock, Phone, Store, BookOpen } from '../icons';
 import { useApp } from '../context/AppContext';
 import PostCard from '../components/posts/PostCard';
 import EmptyState from '../components/ui/EmptyState';

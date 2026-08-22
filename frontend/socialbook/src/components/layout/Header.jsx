@@ -1,4 +1,4 @@
-import { LogIn, Menu } from 'lucide-react';
+import { LogIn, Menu } from '../../icons';
 import { useApp } from '../../context/AppContext';
 
 export default function Header({ onMenuClick, menuOpen = false }) {

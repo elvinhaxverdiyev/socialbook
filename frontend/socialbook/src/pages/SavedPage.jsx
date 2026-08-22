@@ -1,7 +1,7 @@
 import PostCard from '../components/posts/PostCard';
 import EmptyState from '../components/ui/EmptyState';
 import { useApp } from '../context/AppContext';
-import { Bookmark } from 'lucide-react';
+import { Bookmark } from '../icons';
 
 export default function SavedPage() {
   const { savedPosts } = useApp();

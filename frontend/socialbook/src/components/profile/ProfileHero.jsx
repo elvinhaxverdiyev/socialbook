@@ -1,4 +1,4 @@
-import { Pencil, UserPlus, UserCheck, BookOpen, Library, MoreVertical } from 'lucide-react';
+import { Pencil, UserPlus, UserCheck, BookOpen, Library, MoreVertical } from '../../icons';
 import Avatar from '../ui/Avatar';
 import { DEFAULT_BANNER } from '../../data/media';
 import { sanitizeImageUrl } from '../../utils/security';

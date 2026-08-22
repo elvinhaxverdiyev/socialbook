@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ArrowLeft, Ban, Flag, X } from 'lucide-react';
+import { ArrowLeft, Ban, Flag, X } from '../../icons';
 import Avatar from '../ui/Avatar';
 import LegalModal from '../ui/LegalModal';
 import { getDisplayUsername } from '../../data/mockData';

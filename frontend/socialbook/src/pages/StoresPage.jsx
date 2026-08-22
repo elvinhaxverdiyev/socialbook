@@ -1,4 +1,4 @@
-import { MapPin, Star, BadgeCheck, Clock, Store, ChevronRight } from 'lucide-react';
+import { MapPin, Star, BadgeCheck, Clock, Store, ChevronRight } from '../icons';
 import { stores } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 import { sanitizeHexColor } from '../utils/security';

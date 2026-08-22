@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User } from 'lucide-react';
+import { User } from '../icons';
 import PostCard from '../components/posts/PostCard';
 import Composer from '../components/posts/Composer';
 import EmptyState from '../components/ui/EmptyState';

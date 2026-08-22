@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X } from '../../icons';
 import { useApp } from '../../context/AppContext';
 import { isValidEmail, isValidPassword, isValidUsername, LIMITS, sanitizeUsername } from '../../utils/security';
 import LegalModal from '../ui/LegalModal';

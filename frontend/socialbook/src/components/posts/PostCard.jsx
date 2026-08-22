@@ -9,7 +9,7 @@ import {
   Tag,
   BadgeCheck,
   CheckCircle2,
-} from 'lucide-react';
+} from '../../icons';
 import Avatar from '../ui/Avatar';
 import BookSpine from '../ui/BookSpine';
 import RatingStars from '../ui/RatingStars';
@@ -176,7 +176,9 @@ export default function PostCard({ post }) {
           aria-pressed={liked}
           aria-label="Bəyən"
         >
-          <Heart size={18} fill={liked ? 'var(--accent)' : 'none'} strokeWidth={1.7} aria-hidden="true" />
+          <span className="post-action__icon" aria-hidden="true">
+            <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
+          </span>
           <span className="post-action__label">Bəyən</span>
         </button>
 
@@ -192,7 +194,9 @@ export default function PostCard({ post }) {
           onClick={() => requireAuth('Paylaşmaq üçün daxil ol və ya qeydiyyatdan keç.')}
           aria-label="Paylaş"
         >
-          <Share2 size={17} strokeWidth={1.7} aria-hidden="true" />
+          <span className="post-action__icon" aria-hidden="true">
+            <Share2 size={16} />
+          </span>
           <span className="post-action__label">Paylaş</span>
         </button>
 
@@ -204,7 +208,9 @@ export default function PostCard({ post }) {
             aria-pressed={isSaved}
             aria-label="Saxla"
           >
-            <Bookmark size={18} fill={isSaved ? 'var(--gold)' : 'none'} strokeWidth={1.7} aria-hidden="true" />
+            <span className="post-action__icon" aria-hidden="true">
+              <Bookmark size={16} fill={isSaved ? 'currentColor' : 'none'} />
+            </span>
             <span className="post-action__label">Saxla</span>
           </button>
         )}

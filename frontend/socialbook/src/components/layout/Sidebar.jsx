@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X, BookOpen, UserRound } from 'lucide-react';
-import { navItems, legalNavItems } from '../../data/constants';
+import { Search, X, BookOpen, UserRound } from '../../icons';
+import { navItems } from '../../data/constants';
 import { searchBooks, searchAuthors } from '../../data/books';
 import { useApp } from '../../context/AppContext';
 import { LIMITS, sanitizeHexColor } from '../../utils/security';
@@ -20,7 +20,6 @@ export default function Sidebar({ open = false, onClose }) {
     shelfView,
     currentUser,
     isLoggedIn,
-    openSettings,
   } = useApp();
   const [searchOpen, setSearchOpen] = useState(false);
   const searchInputRef = useRef(null);
@@ -119,7 +118,9 @@ export default function Sidebar({ open = false, onClose }) {
             onClick={openSearch}
             aria-expanded={searchOpen}
           >
-            <Search size={17} strokeWidth={1.8} aria-hidden="true" />
+            <span className="sidebar__icon" aria-hidden="true">
+              <Search size={17} fill={searchOpen ? 'currentColor' : 'none'} />
+            </span>
             <span>Axtarış</span>
           </button>
 
@@ -137,7 +138,9 @@ export default function Sidebar({ open = false, onClose }) {
                 onClick={() => go(item.key)}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
+                <span className="sidebar__icon" aria-hidden="true">
+                  <Icon size={17} fill={isActive ? 'currentColor' : 'none'} />
+                </span>
                 <span>{item.label}</span>
                 {item.key === 'notifications' && unreadNotificationsCount > 0 && (
                   <span className="sidebar__badge" aria-label={`${unreadNotificationsCount} oxunmamış`}>
@@ -147,22 +150,6 @@ export default function Sidebar({ open = false, onClose }) {
               </button>
             );
           })}
-        </nav>
-
-        <nav className="sidebar__legal" aria-label="Platforma sənədləri">
-          {legalNavItems.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className="sidebar__legal-link"
-              onClick={() => {
-                openSettings(item.key);
-                onClose?.();
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
         </nav>
       </aside>
 

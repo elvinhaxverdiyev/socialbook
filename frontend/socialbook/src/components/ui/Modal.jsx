@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { X } from 'lucide-react';
+import { X } from '../../icons';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 import useEscapeKey from '../../hooks/useEscapeKey';
 import useFocusTrap from '../../hooks/useFocusTrap';

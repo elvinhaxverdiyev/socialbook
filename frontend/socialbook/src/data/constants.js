@@ -6,7 +6,7 @@ import {
   Bell,
   Bookmark,
   Settings,
-} from 'lucide-react';
+} from '../icons';
 
 export { bookTypes } from './books';
 
