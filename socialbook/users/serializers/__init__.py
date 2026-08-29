@@ -1,4 +1,4 @@
-from .auth_serializers import RegisterSerializer
+from .auth_serializers import LoginSerializer, LogoutSerializer, RegisterSerializer
 from .block_serializers import BlockedUserSerializer
 from .comment_serializers import CommentSerializer
 from .notification_serializers import NotificationSerializer
