@@ -1,5 +1,9 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from users.models.users_models import User
 
 
@@ -59,3 +63,53 @@ class RegisterSerializer(serializers.ModelSerializer):
             gender=validated_data.get("gender", ""),
         )
         return user
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={"input_type": "password"},
+    )
+
+    def validate(self, attrs):
+        email = attrs["email"]
+        password = attrs["password"]
+        invalid = serializers.ValidationError("İstifadəçi adı və ya şifrə yanlışdır.")
+
+        try:
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            User().set_password(password)
+            raise invalid
+
+        if not user.check_password(password):
+            raise invalid
+
+        if not user.is_active:
+            raise PermissionDenied("Hesab deaktivdir.")
+
+        attrs["user"] = user
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.validated_data["user"]
+        refresh = RefreshToken.for_user(user)
+        return {
+            "user": user,
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+        }
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(required=True)
+
+    def save(self, **kwargs):
+        try:
+            RefreshToken(self.validated_data["refresh"]).blacklist()
+        except TokenError:
+            raise serializers.ValidationError(
+                {"refresh": "Refresh token etibarsızdır."}
+            )
