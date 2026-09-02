@@ -48,6 +48,7 @@ import {
   sanitizeUsername,
   usernameToHandle,
 } from '../utils/security';
+import { buildPathname, parsePathname } from '../utils/routing';
 
 const AppContext = createContext(null);
 const COLOR_MODE_KEY = 'kitabci-color-mode';
@@ -241,6 +242,7 @@ export function AppProvider({ children }) {
   const [navStack, setNavStack] = useState([]);
   const skipNavPush = useRef(false);
   const navSnapshotRef = useRef(null);
+  const urlSyncReady = useRef(false);
 
   const currentUser = isLoggedIn ? accountUser : GUEST_USER;
 
@@ -349,7 +351,134 @@ export function AppProvider({ children }) {
     resetToHome();
   };
 
-  const canGoBack = navStack.length > 0 && activePage !== 'home';
+  const applyRouteFromUrl = useCallback(
+    (route) => {
+      if (!route.valid || route.page === 'not-found') {
+        skipNavPush.current = true;
+        setNavStack([]);
+        setViewedPostId(null);
+        setActivePage('not-found');
+        requestAnimationFrame(() => {
+          skipNavPush.current = false;
+        });
+        return;
+      }
+
+      skipNavPush.current = true;
+      setNavStack([]);
+      setViewedPostId(null);
+      setSettingsSection('main');
+
+      let page = route.page;
+
+      if (AUTH_PAGES.has(page) && !isLoggedIn) {
+        setAuthModal({
+          open: true,
+          mode: 'login',
+          reason: 'Bu bölmə üçün daxil ol və ya qeydiyyatdan keç.',
+        });
+        page = 'home';
+      }
+
+      if (page === 'user-profile' && route.handle) {
+        if (blockedHandles.has(route.handle)) {
+          page = 'home';
+          setViewedUserHandle(null);
+        } else if (isLoggedIn && route.handle === accountUser.handle) {
+          page = 'profile';
+          setViewedUserHandle(null);
+        } else {
+          setViewedUserHandle(route.handle);
+        }
+      } else {
+        setViewedUserHandle(null);
+      }
+
+      if (page === 'book') {
+        setViewedBookId(route.bookId ?? null);
+        setViewedAuthorId(null);
+        setViewedStoreId(null);
+      } else if (page === 'author') {
+        setViewedAuthorId(route.authorId ?? null);
+        setViewedBookId(null);
+        setViewedStoreId(null);
+      } else if (page === 'store') {
+        setViewedStoreId(route.storeId ?? null);
+        setViewedBookId(null);
+        setViewedAuthorId(null);
+      } else {
+        setViewedBookId(null);
+        setViewedAuthorId(null);
+        setViewedStoreId(null);
+      }
+
+      if (page === 'shelf') {
+        setShelfView({
+          handle: route.handle ?? null,
+          filter: route.shelfFilter ?? 'all',
+        });
+      } else {
+        setShelfView({ handle: null, filter: 'all' });
+      }
+
+      if (page === 'books') {
+        setBooksGenreFilter(route.genre ?? null);
+      } else if (page !== 'genres') {
+        setBooksGenreFilter(null);
+      }
+
+      setActivePage(page);
+      requestAnimationFrame(() => {
+        skipNavPush.current = false;
+      });
+    },
+    [accountUser.handle, blockedHandles, isLoggedIn],
+  );
+
+  const canGoBack = navStack.length > 0 && activePage !== 'home' && activePage !== 'not-found';
+
+  useEffect(() => {
+    applyRouteFromUrl(parsePathname(window.location.pathname, window.location.search));
+
+    const onPopState = () => {
+      applyRouteFromUrl(parsePathname(window.location.pathname, window.location.search));
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [applyRouteFromUrl]);
+
+  useEffect(() => {
+    if (!urlSyncReady.current) {
+      urlSyncReady.current = true;
+      return;
+    }
+
+    if (activePage === 'not-found') return;
+
+    const path = buildPathname({
+      activePage,
+      viewedUserHandle,
+      viewedBookId,
+      viewedAuthorId,
+      viewedStoreId,
+      shelfView,
+      booksGenreFilter,
+    });
+    const current = `${window.location.pathname}${window.location.search}`;
+
+    if (current !== path) {
+      window.history.pushState(null, '', path);
+    }
+  }, [
+    activePage,
+    viewedUserHandle,
+    viewedBookId,
+    viewedAuthorId,
+    viewedStoreId,
+    shelfView,
+    booksGenreFilter,
+  ]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', colorMode);

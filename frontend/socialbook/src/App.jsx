@@ -26,6 +26,7 @@ const BookDetailPage = lazy(() => import('./pages/BookDetailPage'));
 const AuthorPage = lazy(() => import('./pages/AuthorPage'));
 const GenresPage = lazy(() => import('./pages/GenresPage'));
 const StoreDetailPage = lazy(() => import('./pages/StoreDetailPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const pages = {
   home: HomePage,
@@ -41,6 +42,7 @@ const pages = {
   notifications: NotificationsPage,
   saved: SavedPage,
   settings: SettingsPage,
+  'not-found': NotFoundPage,
 };
 
 const WIDE_PAGES = new Set(['shelf', 'books', 'book', 'author', 'genres', 'stores', 'store']);
@@ -55,6 +57,7 @@ const PAGE_TITLES = {
   notifications: 'Bildirişlər',
   saved: 'Saxlanılanlar',
   settings: 'Parametrlər',
+  'not-found': 'Səhifə tapılmadı',
 };
 
 function resolvePageTitle({
@@ -76,6 +79,9 @@ function resolvePageTitle({
   if (activePage === 'user-profile' && viewedUserHandle) {
     return viewedUserHandle;
   }
+  if (activePage === 'not-found') {
+    return PAGE_TITLES['not-found'];
+  }
   return PAGE_TITLES[activePage] || null;
 }
 
@@ -90,8 +96,13 @@ function AppShell() {
   } = useApp();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const pageKey = isAllowedPage(activePage) ? activePage : 'home';
-  const Page = pages[pageKey] || HomePage;
+  const pageKey =
+    activePage === 'not-found'
+      ? 'not-found'
+      : isAllowedPage(activePage)
+        ? activePage
+        : 'not-found';
+  const Page = pages[pageKey] || NotFoundPage;
   const showRightPanel =
     pageKey === 'home' || pageKey === 'profile' || pageKey === 'user-profile';
 
