@@ -7,12 +7,16 @@ import BookShelf from '../components/profile/BookShelf';
 import UserListModal from '../components/profile/UserListModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
 import ProfileHero from '../components/profile/ProfileHero';
+import StoreProfileView from '../components/stores/StoreProfileView';
 import { useApp } from '../context/AppContext';
 import { getDisplayUsername } from '../data/mockData';
 
 export default function ProfilePage() {
   const {
     currentUser,
+    isStoreAccount,
+    getStoreById,
+    posts,
     updateCurrentProfile,
     profilePosts,
     followingUsers,
@@ -23,6 +27,12 @@ export default function ProfilePage() {
   } = useApp();
   const [openList, setOpenList] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
+
+  if (isStoreAccount) {
+    const store = getStoreById(currentUser.storeId);
+    return <StoreProfileView store={store} posts={posts} isOwner />;
+  }
+
   const username = getDisplayUsername(currentUser.handle);
 
   return (
@@ -81,11 +91,8 @@ export default function ProfilePage() {
       {editOpen && (
         <ProfileEditModal
           user={currentUser}
-          onSave={(updates) => {
-            updateCurrentProfile(updates);
-            setEditOpen(false);
-          }}
           onClose={() => setEditOpen(false)}
+          onSave={updateCurrentProfile}
         />
       )}
     </div>

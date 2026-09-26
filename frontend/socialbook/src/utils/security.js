@@ -10,6 +10,12 @@ export const LIMITS = {
   shelfTitle: 200,
   shelfAuthor: 120,
   bio: 160,
+  storeName: 200,
+  storeLocation: 255,
+  storeDescription: 500,
+  storeAbout: 2000,
+  storeHours: 100,
+  storePhone: 30,
 };
 
 const HEX_COLOR = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -27,7 +33,11 @@ const ALLOWED_IMAGE_MIMES = new Set([
   'image/svg+xml',
 ]);
 
-export const ALLOWED_POST_TYPES = new Set(['general', 'reading', 'finished', 'sale']);
+export const ALLOWED_POST_TYPES = new Set(['general', 'reading', 'finished', 'sale', 'store']);
+export const ROUTE_SLUG_MAX = 80;
+export const PROFILE_STORAGE_MAX_BYTES = 500_000;
+
+const ROUTE_SLUG_PATTERN = /^[\w-]+$/;
 export const ALLOWED_SHELF_STATUSES = new Set(['reading', 'finished', 'want']);
 export const ALLOWED_CONDITIONS = new Set(['yeni', 'yaxşı', 'orta']);
 export const ALLOWED_GENDERS = new Set(['female', 'male', 'other']);
@@ -166,4 +176,31 @@ export function sanitizeDocumentTitle(value, maxLength = 80) {
 
 export function isValidPassword(value) {
   return typeof value === 'string' && value.length >= 6 && value.length <= LIMITS.password;
+}
+
+export function sanitizeRouteSlug(value, maxLength = ROUTE_SLUG_MAX) {
+  if (typeof value !== 'string') return null;
+
+  let decoded;
+  try {
+    decoded = decodeURIComponent(value.trim());
+  } catch {
+    return null;
+  }
+
+  const slug = decoded.slice(0, maxLength);
+  if (!slug || !ROUTE_SLUG_PATTERN.test(slug)) return null;
+  return slug;
+}
+
+const GUEST_AUTH_PATHS = new Set(['/', '/login', '/register', '/register/store']);
+
+export function isSafeGuestPath(path) {
+  if (typeof path !== 'string') return false;
+
+  const normalized = path.replace(/\/+$/, '') || '/';
+  if (!normalized.startsWith('/') || normalized.startsWith('//')) return false;
+  if (/[\\]/.test(normalized) || normalized.includes('..')) return false;
+
+  return GUEST_AUTH_PATHS.has(normalized);
 }

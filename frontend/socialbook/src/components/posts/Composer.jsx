@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Avatar from '../ui/Avatar';
 import RatingStars from '../ui/RatingStars';
 import BookPicker, { CUSTOM_BOOK } from './BookPicker';
-import { composerTypes } from '../../data/constants';
+import { composerTypes, storeComposerTypes } from '../../data/constants';
 import { bookCatalog, findBookByTitle, genres } from '../../data/books';
 import { useApp } from '../../context/AppContext';
 import { LIMITS, parsePositivePrice } from '../../utils/security';
@@ -12,7 +12,8 @@ const TEXTAREA_MIN = 72;
 const TEXTAREA_MAX = 320;
 
 export default function Composer({ onSubmit }) {
-  const { currentUser, shelfBooks } = useApp();
+  const { currentUser, shelfBooks, isStoreAccount } = useApp();
+  const typeOptions = isStoreAccount ? storeComposerTypes : composerTypes;
   const textareaRef = useRef(null);
   const [expanded, setExpanded] = useState(false);
   const [type, setType] = useState('general');
@@ -94,6 +95,12 @@ export default function Composer({ onSubmit }) {
   const categoryLabel = genres.find((g) => g.id === resolvedCategory)?.label;
 
   useEffect(() => {
+    if (isStoreAccount && (type === 'reading' || type === 'finished')) {
+      setType('general');
+    }
+  }, [isStoreAccount, type]);
+
+  useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = '0px';
@@ -144,7 +151,7 @@ export default function Composer({ onSubmit }) {
       if (isCustomBook && !title.trim()) return;
     }
 
-    if (isSale) {
+    if (isSale && !isStoreAccount) {
       const nextCategory = isCustomBook || needsManualCategory ? category : resolvedCategory;
       if (!nextCategory) return;
     }
@@ -165,7 +172,9 @@ export default function Composer({ onSubmit }) {
       if (parsedPrice === null) return;
       payload.price = parsedPrice;
       payload.condition = condition;
-      payload.category = isCustomBook || needsManualCategory ? category : resolvedCategory;
+      if (!isStoreAccount) {
+        payload.category = isCustomBook || needsManualCategory ? category : resolvedCategory;
+      }
     }
 
     if (type === 'finished' && rating > 0) {
@@ -215,7 +224,7 @@ export default function Composer({ onSubmit }) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onFocus={() => setExpanded(true)}
-            placeholder="Post paylaş..."
+            placeholder={isStoreAccount ? 'Mağaza paylaşımı yaz...' : 'Post paylaş...'}
             rows={1}
             className="composer__textarea"
             maxLength={LIMITS.postText}
@@ -224,7 +233,7 @@ export default function Composer({ onSubmit }) {
           {expanded && (
             <div className="composer__details">
               <div className="composer__types" role="group" aria-label="Post tipi">
-                {composerTypes.map((opt) => (
+                {typeOptions.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
@@ -248,7 +257,7 @@ export default function Composer({ onSubmit }) {
                       customLabel={isSale ? 'Kataloqda yoxdur…' : 'Digər kitab...'}
                     />
 
-                    {selectedBook && !isCustomBook && isSale && categoryLabel && (
+                    {selectedBook && !isCustomBook && isSale && !isStoreAccount && categoryLabel && (
                       <p className="composer__meta-line">
                         Kateqoriya: <strong>{categoryLabel}</strong>
                       </p>
@@ -281,7 +290,7 @@ export default function Composer({ onSubmit }) {
                       </div>
                     )}
 
-                    {isSale && (isCustomBook || needsManualCategory) && (
+                    {isSale && !isStoreAccount && (isCustomBook || needsManualCategory) && (
                       <label className="composer__field">
                         <span className="composer__field-label">Kateqoriya *</span>
                         <select
@@ -313,7 +322,7 @@ export default function Composer({ onSubmit }) {
 
                   {isSale && (
                     <div className="composer__block">
-                      <p className="composer__label">Satış detalları</p>
+                      <p className="composer__label">{isStoreAccount ? 'Elan detalları' : 'Satış detalları'}</p>
                       <div className="composer__grid">
                         <label className="composer__field">
                           <span className="composer__field-label">Qiymət (₼)</span>

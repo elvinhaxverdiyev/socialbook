@@ -10,6 +10,7 @@ import PageLoader from './components/ui/PageLoader';
 import { AppProvider, useApp } from './context/AppContext';
 import usePageTitle from './hooks/usePageTitle';
 import { isAllowedPage } from './utils/security';
+import { GUEST_NAV_EVENT, getGuestAuthPage } from './utils/routing';
 import { getBookById, getAuthorById } from './data/books';
 import { getStoreById } from './data/mockData';
 
@@ -27,6 +28,8 @@ const AuthorPage = lazy(() => import('./pages/AuthorPage'));
 const GenresPage = lazy(() => import('./pages/GenresPage'));
 const StoreDetailPage = lazy(() => import('./pages/StoreDetailPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const WelcomePage = lazy(() => import('./pages/WelcomePage'));
+const StoreRegisterPage = lazy(() => import('./pages/StoreRegisterPage'));
 
 const pages = {
   home: HomePage,
@@ -87,6 +90,9 @@ function resolvePageTitle({
 
 function AppShell() {
   const {
+    isLoggedIn,
+    isStoreAccount,
+    ownedStore,
     activePage,
     canGoBack,
     viewedBookId,
@@ -95,6 +101,19 @@ function AppShell() {
     viewedUserHandle,
   } = useApp();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [guestAuthPage, setGuestAuthPage] = useState(() => getGuestAuthPage());
+
+  useEffect(() => {
+    if (isLoggedIn) return undefined;
+
+    const syncGuestPage = () => setGuestAuthPage(getGuestAuthPage());
+    window.addEventListener('popstate', syncGuestPage);
+    window.addEventListener(GUEST_NAV_EVENT, syncGuestPage);
+    return () => {
+      window.removeEventListener('popstate', syncGuestPage);
+      window.removeEventListener(GUEST_NAV_EVENT, syncGuestPage);
+    };
+  }, [isLoggedIn]);
 
   const pageKey =
     activePage === 'not-found'
@@ -102,23 +121,39 @@ function AppShell() {
       : isAllowedPage(activePage)
         ? activePage
         : 'not-found';
-  const Page = pages[pageKey] || NotFoundPage;
-  const showRightPanel =
-    pageKey === 'home' || pageKey === 'profile' || pageKey === 'user-profile';
 
   usePageTitle(
-    resolvePageTitle({
-      activePage: pageKey,
-      viewedBookId,
-      viewedAuthorId,
-      viewedStoreId,
-      viewedUserHandle,
-    }),
+    isLoggedIn
+      ? isStoreAccount && pageKey === 'profile' && ownedStore
+        ? ownedStore.name
+        : resolvePageTitle({
+            activePage: pageKey,
+            viewedBookId,
+            viewedAuthorId,
+            viewedStoreId,
+            viewedUserHandle,
+          })
+      : null,
   );
 
   useEffect(() => {
+    if (!isLoggedIn) return;
     window.scrollTo(0, 0);
-  }, [pageKey, viewedBookId, viewedAuthorId, viewedStoreId, viewedUserHandle]);
+  }, [isLoggedIn, pageKey, viewedBookId, viewedAuthorId, viewedStoreId, viewedUserHandle]);
+
+  if (!isLoggedIn) {
+    const GuestPage = guestAuthPage === 'store-register' ? StoreRegisterPage : WelcomePage;
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <GuestPage />
+      </Suspense>
+    );
+  }
+
+  const Page = pages[pageKey] || NotFoundPage;
+  const showRightPanel =
+    !isStoreAccount &&
+    (pageKey === 'home' || pageKey === 'profile' || pageKey === 'user-profile');
 
   const closeSidebar = () => setSidebarOpen(false);
 

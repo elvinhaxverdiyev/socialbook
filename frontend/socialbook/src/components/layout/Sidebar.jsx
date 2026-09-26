@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X, BookOpen, UserRound } from '../../icons';
+import { Search, X, BookOpen, UserRound, Store } from '../../icons';
 import { navItems } from '../../data/constants';
 import { searchBooks, searchAuthors } from '../../data/books';
 import { useApp } from '../../context/AppContext';
@@ -20,6 +20,7 @@ export default function Sidebar({ open = false, onClose }) {
     shelfView,
     currentUser,
     isLoggedIn,
+    isStoreAccount,
   } = useApp();
   const [searchOpen, setSearchOpen] = useState(false);
   const searchInputRef = useRef(null);
@@ -125,7 +126,9 @@ export default function Sidebar({ open = false, onClose }) {
           </button>
 
           {navItems.map((item) => {
-            const Icon = item.icon;
+            const isStoreProfile = isStoreAccount && item.key === 'profile';
+            const Icon = isStoreProfile ? Store : item.icon;
+            const label = isStoreProfile ? 'Mağazam' : item.label;
             const isActive =
               !searchOpen &&
               (activePage === item.key || (item.key === 'profile' && isOwnShelfPage));
@@ -141,7 +144,7 @@ export default function Sidebar({ open = false, onClose }) {
                 <span className="sidebar__icon" aria-hidden="true">
                   <Icon size={17} fill={isActive ? 'currentColor' : 'none'} />
                 </span>
-                <span>{item.label}</span>
+                <span>{label}</span>
                 {item.key === 'notifications' && unreadNotificationsCount > 0 && (
                   <span className="sidebar__badge" aria-label={`${unreadNotificationsCount} oxunmamış`}>
                     {unreadNotificationsCount}

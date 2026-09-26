@@ -1,12 +1,33 @@
 import {
   ALLOWED_GENRES,
   ALLOWED_SHELF_STATUSES,
+  isSafeGuestPath,
   isValidHandle,
+  sanitizeRouteSlug,
 } from './security';
+
+export const GUEST_NAV_EVENT = 'kitabci:guest-nav';
 
 function normalizePath(pathname) {
   const trimmed = pathname.replace(/\/+$/, '');
   return trimmed || '/';
+}
+
+export function getGuestAuthPage(pathname = window.location.pathname) {
+  const path = normalizePath(pathname);
+  if (path === '/register/store') return 'store-register';
+  return 'welcome';
+}
+
+export function navigateGuestPath(path) {
+  if (!isSafeGuestPath(path)) return;
+
+  const normalized = normalizePath(path);
+  const current = normalizePath(window.location.pathname);
+  if (current !== normalized) {
+    window.history.pushState(null, '', normalized || '/');
+  }
+  window.dispatchEvent(new Event(GUEST_NAV_EVENT));
 }
 
 function handleFromSlug(slug) {
@@ -22,6 +43,9 @@ export function parsePathname(pathname, search = '') {
 
   const staticRoutes = {
     '/': { page: 'home' },
+    '/login': { page: 'home' },
+    '/register': { page: 'home' },
+    '/register/store': { page: 'home' },
     '/books': { page: 'books' },
     '/genres': { page: 'genres' },
     '/stores': { page: 'stores' },
@@ -51,12 +75,18 @@ export function parsePathname(pathname, search = '') {
 
   const bookMatch = path.match(/^\/book\/([^/]+)$/);
   if (bookMatch?.[1]) {
-    return { valid: true, page: 'book', bookId: decodeURIComponent(bookMatch[1]) };
+    const bookId = sanitizeRouteSlug(bookMatch[1]);
+    if (bookId) {
+      return { valid: true, page: 'book', bookId };
+    }
   }
 
   const authorMatch = path.match(/^\/author\/([^/]+)$/);
   if (authorMatch?.[1]) {
-    return { valid: true, page: 'author', authorId: decodeURIComponent(authorMatch[1]) };
+    const authorId = sanitizeRouteSlug(authorMatch[1]);
+    if (authorId) {
+      return { valid: true, page: 'author', authorId };
+    }
   }
 
   const storeMatch = path.match(/^\/store\/(\d+)$/);
