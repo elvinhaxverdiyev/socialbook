@@ -18,6 +18,7 @@ import {
   suggestionPool,
   getDisplayUsername,
   userProfiles,
+  stores as initialStores,
 } from '../data/mockData';
 import {
   DEFAULT_SHELF_THEME,
@@ -41,6 +42,7 @@ import {
   isValidPassword,
   LIMITS,
   parsePositivePrice,
+  PROFILE_STORAGE_MAX_BYTES,
   sanitizeHexColor,
   sanitizeImageUrl,
   sanitizeInitials,
@@ -142,13 +144,12 @@ function getInitialColorMode() {
 
 function getInitialLoggedIn() {
   try {
-    return localStorage.getItem(AUTH_KEY) !== 'out';
+    return localStorage.getItem(AUTH_KEY) === 'in';
   } catch {
     return false;
   }
 }
 
-const PROFILE_STORAGE_MAX_BYTES = 500_000;
 const UNSAFE_STORAGE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 function isSafeStorageObject(data) {
@@ -168,8 +169,33 @@ function loadStoredProfile(fallback) {
     const avatarPresetId = typeof data.avatarPresetId === 'string' ? data.avatarPresetId : null;
     const presetAvatarUrl = resolveAvatarPresetUrl(avatarPresetId);
 
+    const accountType = data.accountType === 'store' ? 'store' : 'reader';
+    const storeId =
+      accountType === 'store' && Number.isFinite(Number(data.storeId))
+        ? Number(data.storeId)
+        : null;
+
+    if (accountType === 'store' && storeId) {
+      const storeName = clampText(data.name, LIMITS.storeName);
+      return {
+        ...fallback,
+        accountType: 'store',
+        storeId,
+        handle: isValidHandle(data.handle) ? data.handle : `@store_${storeId}`,
+        name: storeName || fallback.name,
+        email: clampText(data.email ?? '', LIMITS.email),
+        bio: '',
+        avatarUrl: null,
+        avatarPresetId: null,
+        bannerUrl: DEFAULT_BANNER,
+        initials: sanitizeInitials(storeName || fallback.initials),
+      };
+    }
+
     return {
       ...fallback,
+      accountType: 'reader',
+      storeId: null,
       handle,
       name: getDisplayUsername(handle),
       bio: clampText(data.bio ?? fallback.bio, LIMITS.bio),
@@ -185,21 +211,36 @@ function loadStoredProfile(fallback) {
 
 function saveStoredProfile(profile) {
   try {
-    const avatarUrl = profile.avatarPresetId
-      ? resolveAvatarPresetUrl(profile.avatarPresetId)
-      : profile.avatarUrl;
+    const avatarPresetId = profile.avatarPresetId ?? null;
+    const avatarUrl = avatarPresetId
+      ? resolveAvatarPresetUrl(avatarPresetId)
+      : sanitizeImageUrl(profile.avatarUrl);
 
-    localStorage.setItem(
-      PROFILE_STORAGE_KEY,
-      JSON.stringify({
-        handle: profile.handle,
-        bio: profile.bio,
-        avatarUrl,
-        avatarPresetId: profile.avatarPresetId,
-        bannerUrl: profile.bannerUrl,
-        initials: profile.initials,
-      }),
-    );
+    const payload = {
+      handle: profile.handle,
+      accountType: profile.accountType === 'store' ? 'store' : 'reader',
+      bio: clampText(profile.bio ?? '', LIMITS.bio),
+      avatarUrl,
+      avatarPresetId,
+      bannerUrl: sanitizeImageUrl(profile.bannerUrl) ?? DEFAULT_BANNER,
+      initials: sanitizeInitials(profile.initials),
+    };
+
+    if (profile.accountType === 'store') {
+      payload.storeId = profile.storeId;
+      payload.name = clampText(profile.name ?? '', LIMITS.storeName);
+      payload.email = clampText(profile.email ?? '', LIMITS.email);
+    }
+
+    let serialized = JSON.stringify(payload);
+    if (serialized.length > PROFILE_STORAGE_MAX_BYTES) {
+      payload.avatarUrl = avatarPresetId ? avatarUrl : null;
+      payload.bannerUrl = DEFAULT_BANNER;
+      serialized = JSON.stringify(payload);
+      if (serialized.length > PROFILE_STORAGE_MAX_BYTES) return;
+    }
+
+    localStorage.setItem(PROFILE_STORAGE_KEY, serialized);
   } catch {
     // localStorage dolu ola bilər
   }
@@ -207,6 +248,7 @@ function saveStoredProfile(profile) {
 
 export function AppProvider({ children }) {
   const [posts, setPosts] = useState(initialPosts);
+  const [stores, setStores] = useState(initialStores);
   const [activePage, setActivePage] = useState('home');
   const [viewedUserHandle, setViewedUserHandle] = useState(null);
   const [shelfView, setShelfView] = useState({ handle: null, filter: 'all' });
@@ -245,6 +287,13 @@ export function AppProvider({ children }) {
   const urlSyncReady = useRef(false);
 
   const currentUser = isLoggedIn ? accountUser : GUEST_USER;
+  const isStoreAccount =
+    isLoggedIn && accountUser.accountType === 'store' && accountUser.storeId != null;
+
+  const ownedStore = useMemo(() => {
+    if (!isStoreAccount) return null;
+    return stores.find((store) => store.id === accountUser.storeId) || null;
+  }, [isStoreAccount, accountUser.storeId, stores]);
 
   const blockedHandles = useMemo(
     () => new Set(blockedUsers.map((user) => user.handle)),
@@ -454,7 +503,7 @@ export function AppProvider({ children }) {
       return;
     }
 
-    if (activePage === 'not-found') return;
+    if (activePage === 'not-found' || !isLoggedIn) return;
 
     const path = buildPathname({
       activePage,
@@ -478,6 +527,7 @@ export function AppProvider({ children }) {
     viewedStoreId,
     shelfView,
     booksGenreFilter,
+    isLoggedIn,
   ]);
 
   useEffect(() => {
@@ -517,6 +567,48 @@ export function AppProvider({ children }) {
 
   const login = ({ email, password } = {}) => {
     if (!isValidEmail(email) || !isValidPassword(password)) return false;
+
+    const cleanEmail = clampText(email, LIMITS.email).toLowerCase();
+
+    setAccountUser((prev) => {
+      const isStoreLogin =
+        prev.accountType === 'store' &&
+        prev.storeId != null &&
+        typeof prev.email === 'string' &&
+        prev.email.toLowerCase() === cleanEmail;
+
+      if (isStoreLogin) {
+        saveStoredProfile(prev);
+        return prev;
+      }
+
+      const base =
+        prev.accountType === 'store'
+          ? {
+              ...initialCurrentUser,
+              accountType: 'reader',
+              storeId: null,
+              avatarUrl: initialCurrentUser.avatarUrl ?? null,
+              avatarPresetId: null,
+              bannerUrl: initialCurrentUser.bannerUrl ?? DEFAULT_BANNER,
+              name: getDisplayUsername(initialCurrentUser.handle),
+              initials: sanitizeInitials(initialCurrentUser.initials),
+            }
+          : {
+              ...prev,
+              accountType: 'reader',
+              storeId: null,
+            };
+
+      const nextProfile = {
+        ...base,
+        email: clampText(email, LIMITS.email),
+      };
+
+      saveStoredProfile(nextProfile);
+      return nextProfile;
+    });
+
     setIsLoggedIn(true);
     closeAuthModal();
     return true;
@@ -529,15 +621,96 @@ export function AppProvider({ children }) {
     if (email && !isValidEmail(email)) return false;
     if (!isValidPassword(password)) return false;
 
-    setAccountUser((prev) => ({
-      ...prev,
+    const nextProfile = {
+      accountType: 'reader',
+      storeId: null,
       handle,
       name: getDisplayUsername(handle),
       gender,
-      initials: sanitizeInitials(cleanUsername.slice(0, 2).toUpperCase() || prev.initials),
-    }));
+      bio: accountUser.bio,
+      avatarUrl: accountUser.avatarUrl,
+      avatarPresetId: accountUser.avatarPresetId,
+      bannerUrl: accountUser.bannerUrl,
+      initials: sanitizeInitials(cleanUsername.slice(0, 2).toUpperCase() || accountUser.initials),
+    };
+    setAccountUser((prev) => ({ ...prev, ...nextProfile }));
+    saveStoredProfile({ ...accountUser, ...nextProfile });
     setIsLoggedIn(true);
     closeAuthModal();
+    return true;
+  };
+
+  const getStoreById = useCallback(
+    (id) => {
+      const numId = Number(id);
+      if (!Number.isFinite(numId)) return null;
+      return stores.find((store) => store.id === numId) || null;
+    },
+    [stores],
+  );
+
+  const registerStore = ({
+    email,
+    password,
+    name,
+    location,
+    description = '',
+    about = '',
+    hours = '',
+    phone = '',
+    coverUrl = null,
+  }) => {
+    if (!isValidEmail(email) || !isValidPassword(password)) return false;
+
+    const storeName = clampText(name, LIMITS.storeName);
+    const storeLocation = clampText(location, LIMITS.storeLocation);
+    if (!storeName || !storeLocation) return false;
+
+    const nextStoreId = stores.reduce((max, store) => Math.max(max, store.id), 0) + 1;
+    const coverImage = coverUrl ? sanitizeImageUrl(coverUrl) : null;
+    const ownerHandle = `@store_${nextStoreId}`;
+
+    const newStore = {
+      id: nextStoreId,
+      name: storeName,
+      location: storeLocation,
+      description: clampText(description, LIMITS.storeDescription),
+      about: clampText(about, LIMITS.storeAbout),
+      booksCount: 0,
+      rating: 0,
+      verified: false,
+      hours: clampText(hours, LIMITS.storeHours),
+      phone: clampText(phone, LIMITS.storePhone),
+      cover: '#7A2331',
+      coverImage,
+      ownerHandle,
+    };
+
+    const nextProfile = {
+      accountType: 'store',
+      storeId: nextStoreId,
+      handle: ownerHandle,
+      name: storeName,
+      email: clampText(email, LIMITS.email),
+      bio: '',
+      avatarUrl: null,
+      avatarPresetId: null,
+      bannerUrl: DEFAULT_BANNER,
+      initials: sanitizeInitials(storeName.slice(0, 2)),
+    };
+
+    skipNavPush.current = true;
+    setNavStack([]);
+    setStores((prev) => [...prev, newStore]);
+    setAccountUser(nextProfile);
+    saveStoredProfile(nextProfile);
+    setIsLoggedIn(true);
+    closeAuthModal();
+    setActivePage('profile');
+    window.history.replaceState(null, '', '/profile');
+    requestAnimationFrame(() => {
+      skipNavPush.current = false;
+    });
     return true;
   };
 
@@ -657,6 +830,7 @@ export function AppProvider({ children }) {
   const logout = () => {
     setIsLoggedIn(false);
     resetToHome();
+    window.history.replaceState(null, '', '/login');
   };
 
   const toggleFollow = (handle, user) => {
@@ -857,7 +1031,10 @@ export function AppProvider({ children }) {
   const addPost = (draft) => {
     if (!requireAuth('Post paylaşmaq üçün daxil ol və ya qeydiyyatdan keç.')) return;
 
-    const type = ALLOWED_POST_TYPES.has(draft.type) ? draft.type : 'general';
+    let type = ALLOWED_POST_TYPES.has(draft.type) ? draft.type : 'general';
+    if (accountUser.accountType === 'store' && (type === 'reading' || type === 'finished')) {
+      type = 'general';
+    }
     const text = clampText(draft.text, LIMITS.postText);
     if (!text) return;
 
@@ -899,8 +1076,34 @@ export function AppProvider({ children }) {
             cover: sanitizeHexColor(),
           };
 
+      const isStoreListing = accountUser.accountType === 'store' && accountUser.storeId;
       const category = ALLOWED_GENRES.has(draft.category) ? draft.category : null;
-      if (!category) return;
+      if (!isStoreListing && !category) return;
+
+      const condition = ALLOWED_CONDITIONS.has(draft.condition) ? draft.condition : 'yaxşı';
+
+      if (isStoreListing) {
+        const store = stores.find((entry) => entry.id === accountUser.storeId);
+        if (!store) return;
+
+        setPosts((prev) => [
+          {
+            ...base,
+            type: 'store',
+            store: {
+              id: store.id,
+              name: store.name,
+              location: store.location,
+              verified: Boolean(store.verified),
+            },
+            book,
+            price,
+            condition,
+          },
+          ...prev,
+        ]);
+        return;
+      }
 
       setPosts((prev) => [
         {
@@ -908,7 +1111,7 @@ export function AppProvider({ children }) {
           type: 'sale',
           book,
           price,
-          condition: ALLOWED_CONDITIONS.has(draft.condition) ? draft.condition : 'yaxşı',
+          condition,
           category,
         },
         ...prev,
@@ -1150,7 +1353,7 @@ export function AppProvider({ children }) {
   }, [posts, savedIds, accountUser.handle, blockedHandles]);
 
   const updateCurrentProfile = (updates) => {
-    if (!isLoggedIn || !updates) return;
+    if (!isLoggedIn || !updates || isStoreAccount) return;
 
     const oldHandle = accountUser.handle;
     const handle = isValidHandle(updates.handle) ? updates.handle : oldHandle;
@@ -1248,6 +1451,8 @@ export function AppProvider({ children }) {
     profilePosts,
     savedPosts,
     currentUser,
+    isStoreAccount,
+    ownedStore,
     updateCurrentProfile,
     blockedUsers,
     isBlockedHandle,
@@ -1270,6 +1475,9 @@ export function AppProvider({ children }) {
     isLoggedIn,
     login,
     register,
+    registerStore,
+    stores,
+    getStoreById,
     logout,
     authModal,
     openAuthModal,

@@ -35,6 +35,11 @@ export const composerTypes = [
   { value: 'sale', label: 'Satıram' },
 ];
 
+export const storeComposerTypes = [
+  { value: 'general', label: 'Adi post' },
+  { value: 'sale', label: 'Elan' },
+];
+
 export const genderOptions = [
   { value: 'female', label: 'Qadın' },
   { value: 'male', label: 'Kişi' },
