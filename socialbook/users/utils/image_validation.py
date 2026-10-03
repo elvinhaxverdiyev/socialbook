@@ -6,6 +6,7 @@ from .choices import (
     ALLOWED_IMAGE_FORMATS,
     MAX_AVATAR_BYTES,
     MAX_BACKGROUND_BYTES,
+    MAX_STORE_COVER_BYTES,
 )
 
 
@@ -67,4 +68,13 @@ def validate_background_upload(file_obj):
         max_bytes=MAX_BACKGROUND_BYTES,
         allowed_content_types=ALLOWED_AVATAR_CONTENT_TYPES,
         label="Banner",
+    )
+
+
+def validate_store_cover_upload(file_obj):
+    return _validate_image_file(
+        file_obj,
+        max_bytes=MAX_STORE_COVER_BYTES,
+        allowed_content_types=ALLOWED_AVATAR_CONTENT_TYPES,
+        label="Cover",
     )

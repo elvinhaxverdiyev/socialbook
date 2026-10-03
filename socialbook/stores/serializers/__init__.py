@@ -1,1 +1,1 @@
-from .store_serializers import StoreSerializer, StoreShortSerializer
+from .store_serializers import StoreSerializer, StoreShortSerializer, StoreUpdateSerializer
